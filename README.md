@@ -6,12 +6,11 @@ Language support for **ForgeScript** inside JavaScript and TypeScript files, pow
 
 ## Features
 
-- **Diagnostics** — real-time error highlighting in `.js`, `.ts`, and `.forge` files
+- **Diagnostics** — real-time error highlighting in `.js` and `.ts` files
 - **Completions** — `$function` auto-complete with argument hints
 - **Hover** — inline documentation for every Forge function
 - **Signature help** — argument info as you type
-- **Semantic highlighting** — Forge functions stand out even inside template literals
-- **Template-literal injection** — `` ` `` blocks in JS/TS are highlighted as Forge code
+- **Semantic highlighting** — Forge functions stand out
 
 ---
 
@@ -21,7 +20,7 @@ Place a `forgeconfig.json` in your workspace root:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/EdexLabs/ForgeLSP/main/forgeconfig.schema.json",
+  "$schema": "https://raw.githubusercontent.com/EdexLabs/ForgeVSC/main/forgeconfig.schema.json",
   "extensions": [
     "github:tryforge/forgescript#main",
     {
@@ -62,7 +61,7 @@ The file is watched automatically — saving it restarts the server.
 ## Binary Management
 
 On first activation the extension downloads the correct platform binary from the [latest GitHub release](https://github.com/EdexLabs/ForgeLSP/releases/latest).  
-Every download is SHA-256 verified. Binaries are stored in VS Code's global storage directory (`~/.vscode/extensions/…/globalStorage`).
+Every download is SHA-256 verified. Binaries are stored in VS Code's global storage directory.
 
 A background update check runs 10 seconds after startup and prompts if a newer version is available.
 
