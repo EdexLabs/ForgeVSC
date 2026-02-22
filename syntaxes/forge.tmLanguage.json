@@ -1,0 +1,131 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Forge",
+  "scopeName": "source.forge",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#djseval-call" },
+    { "include": "#function-call" },
+    { "include": "#string-double" },
+    { "include": "#string-single" },
+    { "include": "#number" },
+    { "include": "#operator" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.forge",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.forge",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+
+    "djseval-call": {
+      "comment": "$djsEval[<js>] — content is embedded JavaScript",
+      "name": "meta.function-call.djseval.forge",
+      "begin": "([!@#?&]*)(\\$)(djsEval)(\\[)",
+      "beginCaptures": {
+        "1": { "name": "keyword.operator.modifier.forge" },
+        "2": { "name": "keyword.operator.dollar.forge" },
+        "3": { "name": "entity.name.function.forge" },
+        "4": { "name": "punctuation.definition.arguments.begin.forge" }
+      },
+      "end": "\\]",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.arguments.end.forge" }
+      },
+      "contentName": "source.js",
+      "patterns": [
+        { "include": "source.js" }
+      ]
+    },
+
+    "function-call": {
+      "patterns": [
+        {
+          "comment": "Function call with brackets: $func[...]",
+          "name": "meta.function-call.forge",
+          "begin": "([!@#?&]*)(\\$)([a-zA-Z_][a-zA-Z0-9_]*)(?=\\[)",
+          "beginCaptures": {
+            "1": { "name": "keyword.operator.modifier.forge" },
+            "2": { "name": "keyword.operator.dollar.forge" },
+            "3": { "name": "entity.name.function.forge" }
+          },
+          "end": "(?<=\\])",
+          "patterns": [
+            { "include": "#function-args" }
+          ]
+        },
+        {
+          "comment": "Standalone function: $func (no brackets)",
+          "name": "meta.function-call.simple.forge",
+          "match": "([!@#?&]*)(\\$)([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.operator.modifier.forge" },
+            "2": { "name": "keyword.operator.dollar.forge" },
+            "3": { "name": "entity.name.function.forge" }
+          }
+        }
+      ]
+    },
+
+    "function-args": {
+      "name": "meta.function-call.arguments.forge",
+      "begin": "\\[",
+      "end": "\\]",
+      "beginCaptures": { "0": { "name": "punctuation.definition.arguments.begin.forge" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.arguments.end.forge" } },
+      "patterns": [
+        { "include": "#comment" },
+        { "include": "#djseval-call" },
+        { "include": "#function-call" },
+        { "include": "#string-double" },
+        { "include": "#string-single" },
+        { "include": "#number" },
+        {
+          "name": "punctuation.separator.argument.forge",
+          "match": ";"
+        }
+      ]
+    },
+
+    "string-double": {
+      "name": "string.quoted.double.forge",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.forge", "match": "\\\\." }
+      ]
+    },
+    "string-single": {
+      "name": "string.quoted.single.forge",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        { "name": "constant.character.escape.forge", "match": "\\\\." }
+      ]
+    },
+    "number": {
+      "name": "constant.numeric.forge",
+      "match": "\\b\\d+(\\.\\d+)?\\b"
+    },
+    "operator": {
+      "name": "keyword.operator.forge",
+      "match": "[!@#?&=<>+\\-*/%]"
+    },
+    "punctuation": {
+      "patterns": [
+        { "name": "punctuation.definition.bracket.begin.forge", "match": "\\[" },
+        { "name": "punctuation.definition.bracket.end.forge",   "match": "\\]" },
+        { "name": "punctuation.separator.forge",               "match": ";"  }
+      ]
+    }
+  }
+}

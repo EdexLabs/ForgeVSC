@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Forge Injection (JS/TS Template Literals)",
+  "scopeName": "forge.injection",
+
+  "injectionSelector": "L:source.js, L:source.ts, L:source.jsx, L:source.tsx, L:source.js.jsx",
+
+  "patterns": [
+    { "include": "#forge-template-literal" }
+  ],
+
+  "repository": {
+    "forge-template-literal": {
+      "comment": "Matches code: `...`. The closing backtick cannot be escaped with a single \\.",
+      "name": "meta.embedded.block.forge",
+      "begin": "(code)\\s*(:)\\s*(`)",
+      "beginCaptures": {
+        "1": { "name": "keyword.other.forge-code.js" },
+        "2": { "name": "punctuation.separator.key-value.js" },
+        "3": { "name": "string.template.begin.js" }
+      },
+      "end": "(?<!\\\\)(?:\\\\\\\\)*(`)",
+      "endCaptures": {
+        "1": { "name": "string.template.end.js" }
+      },
+      "patterns": [
+        { "include": "#djseval-in-template" }
+      ]
+    },
+    "djseval-in-template": {
+      "comment": "$djsEval[<js>] inside a backtick block — embed source.js so TextMate highlights the JS argument.",
+      "name": "meta.function-call.djseval.forge",
+      "begin": "([!@#?&]*)(\\$)(djsEval)(\\[)",
+      "beginCaptures": {
+        "1": { "name": "keyword.operator.modifier.forge" },
+        "2": { "name": "keyword.operator.dollar.forge" },
+        "3": { "name": "entity.name.function.forge" },
+        "4": { "name": "punctuation.definition.arguments.begin.forge" }
+      },
+      "end": "\\]",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.arguments.end.forge" }
+      },
+      "contentName": "source.js",
+      "patterns": [
+        { "include": "source.js" }
+      ]
+    }
+  }
+}

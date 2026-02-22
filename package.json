@@ -1,0 +1,170 @@
+{
+  "name": "forgevsc",
+  "displayName": "ForgeScript",
+  "description": "Language support for Forgescript via ForgeLSP",
+  "version": "2.0.0",
+  "publisher": "EdexLabs",
+  "icon": "icon.png",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EdexLabs/ForgeLSP"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "forge",
+    "forgelsp",
+    "botforge",
+    "language-server"
+  ],
+  "activationEvents": [
+    "workspaceContains:forgeconfig.json",
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "forge",
+        "aliases": ["Forge", "forge"],
+        "extensions": [".forge"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "forge",
+        "scopeName": "source.forge",
+        "path": "./syntaxes/forge.tmLanguage.json"
+      },
+      {
+        "scopeName": "forge.injection",
+        "path": "./syntaxes/forge-injection.tmLanguage.json",
+        "injectTo": [
+          "source.js",
+          "source.ts"
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "forgescript.createConfig",
+        "title": "ForgeScript: Create forgeconfig.json"
+      },
+      {
+        "command": "forgescript.restart",
+        "title": "ForgeScript: Restart Server"
+      },
+      {
+        "command": "forgescript.forceUpdate",
+        "title": "ForgeScript: Force Update Binary"
+      },
+      {
+        "command": "forgescript.setCustomBinary",
+        "title": "ForgeScript: Set Custom Binary Path"
+      },
+      {
+        "command": "forgescript.resetBinary",
+        "title": "ForgeScript: Reset to Official Binary"
+      },
+      {
+        "command": "forgescript.showVersion",
+        "title": "ForgeScript: Show Version"
+      },
+      {
+        "command": "forgescript.showStatus",
+        "title": "ForgeScript: Show Status"
+      },
+      {
+        "command": "forgescript.openLog",
+        "title": "ForgeScript: Open Output Log"
+      },
+      {
+        "command": "forgescript.checkForUpdates",
+        "title": "ForgeScript: Check for Updates"
+      },
+      {
+        "command": "forgescript.reloadConfig",
+        "title": "ForgeScript: Reload forgeconfig.json"
+      },
+      {
+        "command": "forgescript.openConfig",
+        "title": "ForgeScript: Open forgeconfig.json"
+      },
+      {
+        "command": "forgescript.stop",
+        "title": "ForgeScript: Stop Server"
+      },
+      {
+        "command": "forgescript.start",
+        "title": "ForgeScript: Start Server"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "forgescript.createConfig"
+        },
+        {
+          "command": "forgescript.restart"
+        },
+        {
+          "command": "forgescript.forceUpdate"
+        },
+        {
+          "command": "forgescript.setCustomBinary"
+        },
+        {
+          "command": "forgescript.resetBinary"
+        },
+        {
+          "command": "forgescript.showVersion"
+        },
+        {
+          "command": "forgescript.showStatus"
+        },
+        {
+          "command": "forgescript.openLog"
+        },
+        {
+          "command": "forgescript.checkForUpdates"
+        },
+        {
+          "command": "forgescript.reloadConfig"
+        },
+        {
+          "command": "forgescript.openConfig"
+        },
+        {
+          "command": "forgescript.stop"
+        },
+        {
+          "command": "forgescript.start"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.4.0"
+  }
+}

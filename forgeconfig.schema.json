@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ForgeConfig",
+  "type": "object",
+  "properties": {
+    "extensions": {
+      "type": "array",
+      "description": "GitHub extension shorthands (e.g. 'github:user/repo#branch') or detailed metadata energy objects.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "pattern": "^github:[^/]+/[^#]+#.+",
+            "description": "GitHub shorthand: github:username/repo#branch"
+          },
+          {
+            "type": "object",
+            "required": ["extension"],
+            "properties": {
+              "extension": {
+                "type": "string",
+                "description": "Name of the extension (e.g. 'forge-std')"
+              },
+              "functions": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to functions.json"
+              },
+              "enums": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to enums.json"
+              },
+              "events": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to events.json"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "custom_functions_path": {
+      "type": "string",
+      "description": "Path to a folder (relative to forgeconfig.json) to scan for custom function definitions."
+    }
+  }
+}
