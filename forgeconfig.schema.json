@@ -42,8 +42,27 @@
       }
     },
     "custom_functions_path": {
-      "type": "string",
-      "description": "Path to a folder (relative to forgeconfig.json) to scan for custom function definitions."
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Path to a folder (relative to forgeconfig.json) to scan for custom function definitions."
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of paths to folders (relative to forgeconfig.json) to scan for custom function definitions."
+        }
+      ]
+    },
+    "custom_colors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+      },
+      "description": "Custom hex colors for functions."
     }
   }
 }

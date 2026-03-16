@@ -75,6 +75,9 @@ function createClient(binaryPath, initOptions, outputChannel, storageDir) {
     if (initOptions?.customFunctionsJson) {
         initializationOptions['customFunctionsJson'] = initOptions.customFunctionsJson;
     }
+    if (initOptions?.customColors) {
+        initializationOptions['customColors'] = initOptions.customColors;
+    }
     // Expose cache path inside extension storage so it survives restarts
     initializationOptions['cachePath'] = path.join(storageDir, 'metadata.json');
     const clientOptions = {
@@ -84,8 +87,58 @@ function createClient(binaryPath, initOptions, outputChannel, storageDir) {
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher('**/forgeconfig.json'),
         },
+        middleware: {
+            provideCompletionItem: (document, position, context, token, next) => {
+                if (!shouldRunLsp(document, position))
+                    return undefined;
+                return next(document, position, context, token);
+            },
+            provideHover: (document, position, token, next) => {
+                if (!shouldRunLsp(document, position))
+                    return undefined;
+                return next(document, position, token);
+            },
+            provideSignatureHelp: (document, position, context, token, next) => {
+                if (!shouldRunLsp(document, position))
+                    return undefined;
+                return next(document, position, context, token);
+            },
+            provideDefinition: (document, position, token, next) => {
+                if (!shouldRunLsp(document, position))
+                    return undefined;
+                return next(document, position, token);
+            },
+        } // Use any temporarily to avoid complex type imports while ensuring functionality
     };
     return new node_1.LanguageClient('forgelsp', 'ForgeLSP', serverOptions, clientOptions);
+}
+/**
+ * Returns true if we should perform LSP actions at the given position.
+ * For JS/TS documents, this means being inside unescaped backticks.
+ * For .forge documents, this is always true.
+ */
+function shouldRunLsp(document, position) {
+    if (document.languageId === 'forge') {
+        return true;
+    }
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+    let inside = false;
+    let escaped = false;
+    for (let i = 0; i < offset; i++) {
+        const char = text[i];
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (char === '\\') {
+            escaped = true;
+        }
+        else if (char === '`') {
+            inside = !inside;
+        }
+    }
+    return inside;
 }
 async function startClient(c) {
     client = c;

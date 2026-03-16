@@ -31,6 +31,7 @@ import {
 let outputChannel: vscode.OutputChannel;
 let storageDir: string;
 let statusBarItem: vscode.StatusBarItem;
+const decorationsByUri = new Map<string, vscode.TextEditorDecorationType[]>();
 
 // ─── Status bar ────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ async function doStart(): Promise<void> {
     }
 
     const client = createClient(state.binaryPath, initOptions, outputChannel, storageDir);
+    registerNotificationListeners(client);
     await startClient(client);
 
     const tag = state.isCustom
@@ -79,6 +81,7 @@ async function doStart(): Promise<void> {
 async function doStop(): Promise<void> {
   setStatus('ForgeLSP: Stopping…');
   await stopClient();
+  clearAllDecorations();
   setStatus('ForgeLSP: Stopped', 'ForgeLSP server is not running.', 'forgescript.start');
   outputChannel.appendLine('[ForgeLSP] Server stopped.');
 }
@@ -362,11 +365,85 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await doRestart();
   });
 
+  // ── Client Lifecycle ───────────────────────────────────────────────────────
+  context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => {
+    const uri = doc.uri.toString();
+    const decorations = decorationsByUri.get(uri);
+    if (decorations) {
+      decorations.forEach(d => d.dispose());
+      decorationsByUri.delete(uri);
+    }
+  }));
+
   // ── Initial start ─────────────────────────────────────────────────────────
   await doStart();
 
   // ── Background update check (after 10 s to not slow startup) ─────────────
   setTimeout(() => backgroundUpdateCheck(), 10_000);
+}
+
+// ─── Helpers for Notifications & Decorations ────────────────────────────────
+
+function clearAllDecorations(): void {
+  for (const decorations of decorationsByUri.values()) {
+    decorations.forEach(d => d.dispose());
+  }
+  decorationsByUri.clear();
+}
+
+function registerNotificationListeners(client: any): void {
+  client.onNotification('forge/customColors', (params: { uri: string; tokens: { range: vscode.Range; color_index: number }[] }) => {
+    const configPath = findForgeConfig();
+    if (!configPath) return;
+
+    const config = readForgeConfig(configPath, outputChannel);
+    if (!config || !config.customColors || config.customColors.length === 0) {
+      // Clear existing decorations if custom colors are disabled
+      const existing = decorationsByUri.get(params.uri);
+      if (existing) {
+        existing.forEach(d => d.dispose());
+        decorationsByUri.delete(params.uri);
+      }
+      return;
+    }
+
+    const colors = config.customColors;
+    const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === params.uri);
+    if (!editor) return;
+
+    // Clear existing decorations for this URI
+    const existing = decorationsByUri.get(params.uri);
+    if (existing) {
+      existing.forEach(d => d.dispose());
+    }
+
+    const newDecorations: vscode.TextEditorDecorationType[] = colors.map(c => vscode.window.createTextEditorDecorationType({
+      color: c
+    }));
+
+    const rangesByColorIndex = new Map<number, vscode.Range[]>();
+    for (const token of params.tokens) {
+      if (!rangesByColorIndex.has(token.color_index)) {
+        rangesByColorIndex.set(token.color_index, []);
+      }
+      // Notification uses LSP range (0-indexed), VS Code uses 0-indexed as well
+      const range = new vscode.Range(
+        token.range.start.line,
+        token.range.start.character,
+        token.range.end.line,
+        token.range.end.character
+      );
+      rangesByColorIndex.get(token.color_index)!.push(range);
+    }
+
+    for (const [index, ranges] of rangesByColorIndex) {
+      if (index < newDecorations.length) {
+        editor.setDecorations(newDecorations[index], ranges);
+      }
+    }
+
+    decorationsByUri.set(params.uri, newDecorations);
+  });
 }
 
 // ─── Extension deactivate ──────────────────────────────────────────────────

@@ -37,8 +37,8 @@ export function createClient(
     initializationOptions['metadataUrls'] = initOptions.metadataUrls.map((m) => {
       const entry: Record<string, string> = { extension: m.extension };
       if (m.functions) entry['functions'] = m.functions;
-      if (m.enums)     entry['enums']     = m.enums;
-      if (m.events)    entry['events']    = m.events;
+      if (m.enums) entry['enums'] = m.enums;
+      if (m.events) entry['events'] = m.events;
       return entry;
     });
   }
@@ -51,6 +51,10 @@ export function createClient(
     initializationOptions['customFunctionsJson'] = initOptions.customFunctionsJson;
   }
 
+  if (initOptions?.customColors) {
+    initializationOptions['customColors'] = initOptions.customColors;
+  }
+
   // Expose cache path inside extension storage so it survives restarts
   initializationOptions['cachePath'] = path.join(storageDir, 'metadata.json');
 
@@ -61,6 +65,24 @@ export function createClient(
     synchronize: {
       fileEvents: vscode.workspace.createFileSystemWatcher('**/forgeconfig.json'),
     },
+    middleware: {
+      provideCompletionItem: (document: any, position: any, context: any, token: any, next: any) => {
+        if (!shouldRunLsp(document, position)) return undefined;
+        return next(document, position, context, token);
+      },
+      provideHover: (document: any, position: any, token: any, next: any) => {
+        if (!shouldRunLsp(document, position)) return undefined;
+        return next(document, position, token);
+      },
+      provideSignatureHelp: (document: any, position: any, context: any, token: any, next: any) => {
+        if (!shouldRunLsp(document, position)) return undefined;
+        return next(document, position, context, token);
+      },
+      provideDefinition: (document: any, position: any, token: any, next: any) => {
+        if (!shouldRunLsp(document, position)) return undefined;
+        return next(document, position, token);
+      },
+    } as any // Use any temporarily to avoid complex type imports while ensuring functionality
   };
 
   return new LanguageClient(
@@ -69,6 +91,40 @@ export function createClient(
     serverOptions,
     clientOptions
   );
+}
+
+/**
+ * Returns true if we should perform LSP actions at the given position.
+ * For JS/TS documents, this means being inside unescaped backticks.
+ * For .forge documents, this is always true.
+ */
+function shouldRunLsp(document: vscode.TextDocument, position: vscode.Position): boolean {
+  if (document.languageId === 'forge') {
+    return true;
+  }
+
+  const text = document.getText();
+  const offset = document.offsetAt(position);
+
+  let inside = false;
+  let escaped = false;
+
+  for (let i = 0; i < offset; i++) {
+    const char = text[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+    } else if (char === '`') {
+      inside = !inside;
+    }
+  }
+
+  return inside;
 }
 
 export async function startClient(c: LanguageClient): Promise<void> {

@@ -45,56 +45,13 @@ const lspClient_1 = require("./lspClient");
 let outputChannel;
 let storageDir;
 let statusBarItem;
+const decorationsByUri = new Map();
 // ─── Status bar ────────────────────────────────────────────────────────────
 function setStatus(text, tooltip, command) {
     statusBarItem.text = `$(symbol-function) ${text}`;
     statusBarItem.tooltip = tooltip ?? 'ForgeLSP';
     statusBarItem.command = command ?? 'forgescript.showStatus';
     statusBarItem.show();
-}
-let statsInterval;
-function startStatsPolling() {
-    stopStatsPolling();
-    statsInterval = setInterval(async () => {
-        if (!(0, lspClient_1.isRunning)())
-            return;
-        const client = (0, lspClient_1.getClient)();
-        if (!client)
-            return;
-        try {
-            const activeEditor = vscode.window.activeTextEditor;
-            const uri = activeEditor ? activeEditor.document.uri.toString() : undefined;
-            const args = uri ? [uri] : [];
-            const stats = await client.sendRequest('workspace/executeCommand', {
-                command: 'forgescript.getStats',
-                arguments: args
-            });
-            if (stats) {
-                const md = new vscode.MarkdownString();
-                md.isTrusted = true;
-                md.appendMarkdown(`**ForgeLSP is active.**\n\n`);
-                md.appendMarkdown(`- **Average Parse Time**: ${stats.averageParseTime.toFixed(2)}ms\n`);
-                md.appendMarkdown(`- **Current File Average Parse Time**: ${stats.currentFileParseTime.toFixed(2)}ms\n`);
-                md.appendMarkdown(`- **Lowest Parse Time**: ${stats.lowestParseTime.toFixed(2)}ms\n`);
-                md.appendMarkdown(`- **Total Parses**: ${stats.totalParses}\n\n`);
-                md.appendMarkdown(`---\n\n`);
-                md.appendMarkdown(`[$(refresh) Restart](command:forgescript.restart)  |  `);
-                md.appendMarkdown(`[$(stop) Stop](command:forgescript.stop)\n\n`);
-                md.appendMarkdown(`[$(trash) Remove Cache](command:forgescript.removeCache)  |  `);
-                md.appendMarkdown(`[$(sync) Refetch Metadata](command:forgescript.refetchMetadata)`);
-                statusBarItem.tooltip = md;
-            }
-        }
-        catch (e) {
-            // ignore
-        }
-    }, 2000);
-}
-function stopStatsPolling() {
-    if (statsInterval) {
-        clearInterval(statsInterval);
-        statsInterval = undefined;
-    }
 }
 // ─── Start / stop helpers ──────────────────────────────────────────────────
 async function doStart() {
@@ -109,13 +66,13 @@ async function doStart() {
             outputChannel.appendLine('[ForgeLSP] No forgeconfig.json found in workspace root.');
         }
         const client = (0, lspClient_1.createClient)(state.binaryPath, initOptions, outputChannel, storageDir);
+        registerNotificationListeners(client);
         await (0, lspClient_1.startClient)(client);
         const tag = state.isCustom
             ? 'custom'
             : (state.installedTag ?? 'unknown');
         setStatus(`ForgeLSP: Running (${tag})`, `ForgeLSP is active. Binary: ${state.binaryPath}`, 'forgescript.showStatus');
         outputChannel.appendLine(`[ForgeLSP] Server started. Binary: ${state.binaryPath}`);
-        startStatsPolling();
     }
     catch (err) {
         setStatus('ForgeLSP: Error', `${err}`, 'forgescript.openLog');
@@ -124,9 +81,9 @@ async function doStart() {
     }
 }
 async function doStop() {
-    stopStatsPolling();
     setStatus('ForgeLSP: Stopping…');
     await (0, lspClient_1.stopClient)();
+    clearAllDecorations();
     setStatus('ForgeLSP: Stopped', 'ForgeLSP server is not running.', 'forgescript.start');
     outputChannel.appendLine('[ForgeLSP] Server stopped.');
 }
@@ -316,27 +273,6 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('forgescript.createConfig', async () => {
         await (0, configReader_1.openOrCreateForgeConfig)(outputChannel);
     }));
-    context.subscriptions.push(vscode.commands.registerCommand('forgescript.removeCache', async () => {
-        const client = (0, lspClient_1.getClient)();
-        if (client && (0, lspClient_1.isRunning)()) {
-            await client.sendRequest('workspace/executeCommand', {
-                command: 'forgescript.removeCache',
-                arguments: []
-            });
-            vscode.window.showInformationMessage('ForgeLSP: Parse cache removed.');
-        }
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('forgescript.refetchMetadata', async () => {
-        const client = (0, lspClient_1.getClient)();
-        if (client && (0, lspClient_1.isRunning)()) {
-            vscode.window.showInformationMessage('ForgeLSP: Refetching metadata...');
-            await client.sendRequest('workspace/executeCommand', {
-                command: 'forgescript.refetchMetadata',
-                arguments: []
-            });
-            vscode.window.showInformationMessage('ForgeLSP: Metadata refetched successfully.');
-        }
-    }));
     // ── Watch forgeconfig.json for changes ───────────────────────────────────
     const configWatcher = vscode.workspace.createFileSystemWatcher('**/forgeconfig.json');
     context.subscriptions.push(configWatcher);
@@ -352,10 +288,70 @@ async function activate(context) {
         outputChannel.appendLine('[ForgeLSP] forgeconfig.json deleted, restarting with empty config…');
         await doRestart();
     });
+    // ── Client Lifecycle ───────────────────────────────────────────────────────
+    context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => {
+        const uri = doc.uri.toString();
+        const decorations = decorationsByUri.get(uri);
+        if (decorations) {
+            decorations.forEach(d => d.dispose());
+            decorationsByUri.delete(uri);
+        }
+    }));
     // ── Initial start ─────────────────────────────────────────────────────────
     await doStart();
     // ── Background update check (after 10 s to not slow startup) ─────────────
     setTimeout(() => backgroundUpdateCheck(), 10000);
+}
+// ─── Helpers for Notifications & Decorations ────────────────────────────────
+function clearAllDecorations() {
+    for (const decorations of decorationsByUri.values()) {
+        decorations.forEach(d => d.dispose());
+    }
+    decorationsByUri.clear();
+}
+function registerNotificationListeners(client) {
+    client.onNotification('forge/customColors', (params) => {
+        const configPath = (0, configReader_1.findForgeConfig)();
+        if (!configPath)
+            return;
+        const config = (0, configReader_1.readForgeConfig)(configPath, outputChannel);
+        if (!config || !config.customColors || config.customColors.length === 0) {
+            // Clear existing decorations if custom colors are disabled
+            const existing = decorationsByUri.get(params.uri);
+            if (existing) {
+                existing.forEach(d => d.dispose());
+                decorationsByUri.delete(params.uri);
+            }
+            return;
+        }
+        const colors = config.customColors;
+        const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === params.uri);
+        if (!editor)
+            return;
+        // Clear existing decorations for this URI
+        const existing = decorationsByUri.get(params.uri);
+        if (existing) {
+            existing.forEach(d => d.dispose());
+        }
+        const newDecorations = colors.map(c => vscode.window.createTextEditorDecorationType({
+            color: c
+        }));
+        const rangesByColorIndex = new Map();
+        for (const token of params.tokens) {
+            if (!rangesByColorIndex.has(token.color_index)) {
+                rangesByColorIndex.set(token.color_index, []);
+            }
+            // Notification uses LSP range (0-indexed), VS Code uses 0-indexed as well
+            const range = new vscode.Range(token.range.start.line, token.range.start.character, token.range.end.line, token.range.end.character);
+            rangesByColorIndex.get(token.color_index).push(range);
+        }
+        for (const [index, ranges] of rangesByColorIndex) {
+            if (index < newDecorations.length) {
+                editor.setDecorations(newDecorations[index], ranges);
+            }
+        }
+        decorationsByUri.set(params.uri, newDecorations);
+    });
 }
 // ─── Extension deactivate ──────────────────────────────────────────────────
 async function deactivate() {

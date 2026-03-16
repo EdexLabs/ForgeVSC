@@ -133,14 +133,23 @@ function readForgeConfig(configPath, outputChannel) {
     }
     // ── custom_functions_path ──────────────────────────────────────────────
     if (json.custom_functions_path) {
-        opts.customFunctionsPath = resolveRelativePath(configDir, json.custom_functions_path);
+        if (Array.isArray(json.custom_functions_path)) {
+            opts.customFunctionsPath = json.custom_functions_path.map(p => resolveRelativePath(configDir, p));
+        }
+        else {
+            opts.customFunctionsPath = resolveRelativePath(configDir, json.custom_functions_path);
+        }
     }
     // ── custom_functions_json ──────────────────────────────────────────────
     if (json.custom_functions_json) {
         opts.customFunctionsJson = resolveRelativePath(configDir, json.custom_functions_json);
     }
+    // ── custom_colors ──────────────────────────────────────────────────────
+    if (json.custom_colors && Array.isArray(json.custom_colors)) {
+        opts.customColors = json.custom_colors;
+    }
     outputChannel.appendLine(`[ForgeLSP] Loaded forgeconfig.json: ${opts.metadataUrls?.length ?? 0} extension(s)` +
-        (opts.customFunctionsPath ? `, custom path: ${opts.customFunctionsPath}` : '') +
+        (opts.customFunctionsPath ? `, custom path: ${Array.isArray(opts.customFunctionsPath) ? opts.customFunctionsPath.join(', ') : opts.customFunctionsPath}` : '') +
         (opts.customFunctionsJson ? `, custom JSON: ${opts.customFunctionsJson}` : ''));
     return opts;
 }

@@ -2,7 +2,7 @@
   "name": "forgevsc",
   "displayName": "ForgeScript",
   "description": "Language support for Forgescript via ForgeLSP",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "publisher": "EdexLabs",
   "icon": "icon.png",
   "license": "GPL-3.0",
@@ -25,17 +25,20 @@
     "language-server"
   ],
   "activationEvents": [
-    "workspaceContains:forgeconfig.json",
-    "onLanguage:javascript",
-    "onLanguage:typescript"
+    "workspaceContains:forgeconfig.json"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "forge",
-        "aliases": ["Forge", "forge"],
-        "extensions": [".forge"],
+        "aliases": [
+          "Forge",
+          "forge"
+        ],
+        "extensions": [
+          ".forge"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
