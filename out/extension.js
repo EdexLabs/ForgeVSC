@@ -46,6 +46,7 @@ let outputChannel;
 let storageDir;
 let statusBarItem;
 const decorationsByUri = new Map();
+const tokensByUri = new Map();
 // ─── Status bar ────────────────────────────────────────────────────────────
 function setStatus(text, tooltip, command) {
     statusBarItem.text = `$(symbol-function) ${text}`;
@@ -73,6 +74,8 @@ async function doStart() {
             : (state.installedTag ?? 'unknown');
         setStatus(`ForgeLSP: Running (${tag})`, `ForgeLSP is active. Binary: ${state.binaryPath}`, 'forgescript.showStatus');
         outputChannel.appendLine(`[ForgeLSP] Server started. Binary: ${state.binaryPath}`);
+        // Re-apply decorations to all visible editors once client starts
+        vscode.window.visibleTextEditors.forEach(editor => applyDecorations(editor));
     }
     catch (err) {
         setStatus('ForgeLSP: Error', `${err}`, 'forgescript.openLog');
@@ -84,6 +87,7 @@ async function doStop() {
     setStatus('ForgeLSP: Stopping…');
     await (0, lspClient_1.stopClient)();
     clearAllDecorations();
+    tokensByUri.clear();
     setStatus('ForgeLSP: Stopped', 'ForgeLSP server is not running.', 'forgescript.start');
     outputChannel.appendLine('[ForgeLSP] Server stopped.');
 }
@@ -288,7 +292,7 @@ async function activate(context) {
         outputChannel.appendLine('[ForgeLSP] forgeconfig.json deleted, restarting with empty config…');
         await doRestart();
     });
-    // ── Client Lifecycle ───────────────────────────────────────────────────────
+    // ── Client Lifecycle & Editor Visibility ───────────────────────────────────
     context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => {
         const uri = doc.uri.toString();
         const decorations = decorationsByUri.get(uri);
@@ -296,6 +300,14 @@ async function activate(context) {
             decorations.forEach(d => d.dispose());
             decorationsByUri.delete(uri);
         }
+        tokensByUri.delete(uri);
+    }));
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+        if (editor)
+            applyDecorations(editor);
+    }));
+    context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(editors => {
+        editors.forEach(editor => applyDecorations(editor));
     }));
     // ── Initial start ─────────────────────────────────────────────────────────
     await doStart();
@@ -309,48 +321,55 @@ function clearAllDecorations() {
     }
     decorationsByUri.clear();
 }
-function registerNotificationListeners(client) {
-    client.onNotification('forge/customColors', (params) => {
-        const configPath = (0, configReader_1.findForgeConfig)();
-        if (!configPath)
-            return;
-        const config = (0, configReader_1.readForgeConfig)(configPath, outputChannel);
-        if (!config || !config.customColors || config.customColors.length === 0) {
-            // Clear existing decorations if custom colors are disabled
-            const existing = decorationsByUri.get(params.uri);
-            if (existing) {
-                existing.forEach(d => d.dispose());
-                decorationsByUri.delete(params.uri);
-            }
-            return;
-        }
-        const colors = config.customColors;
-        const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === params.uri);
-        if (!editor)
-            return;
-        // Clear existing decorations for this URI
-        const existing = decorationsByUri.get(params.uri);
+function applyDecorations(editor) {
+    const uri = editor.document.uri.toString();
+    const tokens = tokensByUri.get(uri);
+    if (!tokens)
+        return;
+    const configPath = (0, configReader_1.findForgeConfig)();
+    if (!configPath)
+        return;
+    const config = (0, configReader_1.readForgeConfig)(configPath, outputChannel);
+    if (!config || !config.customColors || config.customColors.length === 0) {
+        // Clear existing decorations if custom colors are disabled or missing
+        const existing = decorationsByUri.get(uri);
         if (existing) {
             existing.forEach(d => d.dispose());
+            decorationsByUri.delete(uri);
         }
-        const newDecorations = colors.map(c => vscode.window.createTextEditorDecorationType({
-            color: c
-        }));
-        const rangesByColorIndex = new Map();
-        for (const token of params.tokens) {
-            if (!rangesByColorIndex.has(token.color_index)) {
-                rangesByColorIndex.set(token.color_index, []);
-            }
-            // Notification uses LSP range (0-indexed), VS Code uses 0-indexed as well
-            const range = new vscode.Range(token.range.start.line, token.range.start.character, token.range.end.line, token.range.end.character);
-            rangesByColorIndex.get(token.color_index).push(range);
+        return;
+    }
+    const colors = config.customColors;
+    // Clear existing decorations for this URI before applying new ones
+    const existing = decorationsByUri.get(uri);
+    if (existing) {
+        existing.forEach(d => d.dispose());
+    }
+    const newDecorations = colors.map(c => vscode.window.createTextEditorDecorationType({
+        color: c
+    }));
+    const rangesByColorIndex = new Map();
+    for (const token of tokens) {
+        if (!rangesByColorIndex.has(token.color_index)) {
+            rangesByColorIndex.set(token.color_index, []);
         }
-        for (const [index, ranges] of rangesByColorIndex) {
-            if (index < newDecorations.length) {
-                editor.setDecorations(newDecorations[index], ranges);
-            }
+        const range = new vscode.Range(token.range.start.line, token.range.start.character, token.range.end.line, token.range.end.character);
+        rangesByColorIndex.get(token.color_index).push(range);
+    }
+    for (const [index, ranges] of rangesByColorIndex) {
+        if (index < newDecorations.length) {
+            editor.setDecorations(newDecorations[index], ranges);
         }
-        decorationsByUri.set(params.uri, newDecorations);
+    }
+    decorationsByUri.set(uri, newDecorations);
+}
+function registerNotificationListeners(client) {
+    client.onNotification('forge/customColors', (params) => {
+        tokensByUri.set(params.uri, params.tokens);
+        const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === params.uri);
+        if (editor) {
+            applyDecorations(editor);
+        }
     });
 }
 // ─── Extension deactivate ──────────────────────────────────────────────────
