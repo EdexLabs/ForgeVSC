@@ -12,6 +12,9 @@ import {
   fetchLatestRelease,
 } from './binaryManager';
 
+import { initGuides } from './guides';
+import { registerDocsView, runSearch } from './docsView';
+
 import {
   findForgeConfig,
   readForgeConfig,
@@ -350,6 +353,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await openOrCreateForgeConfig(outputChannel);
     })
   )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('forgevsc.search', async () => {
+      await runSearch();
+    })
+  );
+
   // ── Watch forgeconfig.json for changes ───────────────────────────────────
 
   const configWatcher = vscode.workspace.createFileSystemWatcher('**/forgeconfig.json');
@@ -388,6 +397,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(editors => {
     editors.forEach(editor => applyDecorations(editor));
   }));
+
+  // ── Guides sidebar ───────────────────────────────────────────────────────
+  initGuides(context);
+  registerDocsView(context, outputChannel);
 
   // ── Initial start ─────────────────────────────────────────────────────────
   await doStart();

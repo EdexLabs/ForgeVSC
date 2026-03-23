@@ -2,7 +2,7 @@
   "name": "forgescript",
   "displayName": "ForgeScript",
   "description": "Language support for Forgescript via ForgeLSP",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "publisher": "EdexLabs",
   "icon": "icon.png",
   "license": "GPL-3.0",
@@ -29,6 +29,25 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "forgevsc",
+          "title": "ForgeVSC",
+          "icon": "$(symbol-function)"
+        }
+      ]
+    },
+    "views": {
+      "forgevsc": [
+        {
+          "id": "forgevsc.explorerView",
+          "name": "Explorer",
+          "icon": "$(symbol-function)",
+          "contextualTitle": "ForgeVSC"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "forge",
@@ -109,6 +128,66 @@
       {
         "command": "forgescript.start",
         "title": "ForgeScript: Start Server"
+      },
+      {
+        "command": "forgevsc.openGuide",
+        "title": "ForgeVSC: Open Guide",
+        "icon": "$(book)"
+      },
+      {
+        "command": "forgevsc.favoriteGuide",
+        "title": "ForgeVSC: Add to Favorites",
+        "icon": "$(star-empty)"
+      },
+      {
+        "command": "forgevsc.unfavoriteGuide",
+        "title": "ForgeVSC: Remove from Favorites",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "forgevsc.openGuideExternal",
+        "title": "ForgeVSC: Open Guide on Docs Site",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "forgevsc.searchGuides",
+        "title": "ForgeVSC: Search Guides",
+        "icon": "$(search)"
+      },
+      {
+        "command": "forgevsc.reloadGuides",
+        "title": "ForgeVSC: Reload Guides",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "forgevsc.openFunctionDocs",
+        "title": "ForgeVSC: Open Function Docs",
+        "icon": "$(symbol-function)"
+      },
+      {
+        "command": "forgevsc.searchFunctions",
+        "title": "ForgeVSC: Search Functions",
+        "icon": "$(search)"
+      },
+      {
+        "command": "forgevsc.reloadFunctions",
+        "title": "ForgeVSC: Reload Functions",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "forgevsc.openEnumDocs",
+        "title": "ForgeVSC: Open Enum Docs",
+        "icon": "$(symbol-enum)"
+      },
+      {
+        "command": "forgevsc.openEventDocs",
+        "title": "ForgeVSC: Open Event Docs",
+        "icon": "$(symbol-event)"
+      },
+      {
+        "command": "forgevsc.search",
+        "title": "ForgeVSC: Search",
+        "icon": "$(search)"
       }
     ],
     "menus": {
@@ -151,9 +230,103 @@
         },
         {
           "command": "forgescript.start"
+        },
+        {
+          "command": "forgevsc.searchFunctions"
+        },
+        {
+          "command": "forgevsc.searchGuides"
+        },
+        {
+          "command": "forgevsc.reloadFunctions"
+        },
+        {
+          "command": "forgevsc.reloadGuides"
+        },
+        {
+          "command": "forgevsc.openFunctionDocs",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.openEnumDocs",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.openEventDocs",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.openGuide",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.openGuideExternal",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.favoriteGuide",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.unfavoriteGuide",
+          "when": "false"
+        },
+        {
+          "command": "forgevsc.search"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "forgevsc.searchFunctions",
+          "when": "view == forgevsc.explorerView",
+          "group": "navigation"
+        },
+        {
+          "command": "forgevsc.reloadFunctions",
+          "when": "view == forgevsc.explorerView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "forgevsc.favoriteGuide",
+          "when": "view == forgevsc.explorerView && viewItem == guide",
+          "group": "inline"
+        },
+        {
+          "command": "forgevsc.unfavoriteGuide",
+          "when": "view == forgevsc.explorerView && viewItem == guide.favorite",
+          "group": "inline"
+        },
+        {
+          "command": "forgevsc.openGuideExternal",
+          "when": "view == forgevsc.explorerView && (viewItem == guide || viewItem == guide.favorite)",
+          "group": "inline"
+        },
+        {
+          "command": "forgevsc.favoriteGuide",
+          "when": "view == forgevsc.explorerView && viewItem == guide",
+          "group": "guides@1"
+        },
+        {
+          "command": "forgevsc.unfavoriteGuide",
+          "when": "view == forgevsc.explorerView && viewItem == guide.favorite",
+          "group": "guides@1"
+        },
+        {
+          "command": "forgevsc.openGuideExternal",
+          "when": "view == forgevsc.explorerView && (viewItem == guide || viewItem == guide.favorite)",
+          "group": "guides@2"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "forgevsc.search",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

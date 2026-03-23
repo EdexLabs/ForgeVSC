@@ -39,6 +39,8 @@ const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const binaryManager_1 = require("./binaryManager");
+const guides_1 = require("./guides");
+const docsView_1 = require("./docsView");
 const configReader_1 = require("./configReader");
 const lspClient_1 = require("./lspClient");
 // ─── Module-level singletons ───────────────────────────────────────────────
@@ -277,6 +279,9 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('forgescript.createConfig', async () => {
         await (0, configReader_1.openOrCreateForgeConfig)(outputChannel);
     }));
+    context.subscriptions.push(vscode.commands.registerCommand('forgevsc.search', async () => {
+        await (0, docsView_1.runSearch)();
+    }));
     // ── Watch forgeconfig.json for changes ───────────────────────────────────
     const configWatcher = vscode.workspace.createFileSystemWatcher('**/forgeconfig.json');
     context.subscriptions.push(configWatcher);
@@ -309,6 +314,9 @@ async function activate(context) {
     context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(editors => {
         editors.forEach(editor => applyDecorations(editor));
     }));
+    // ── Guides sidebar ───────────────────────────────────────────────────────
+    (0, guides_1.initGuides)(context);
+    (0, docsView_1.registerDocsView)(context, outputChannel);
     // ── Initial start ─────────────────────────────────────────────────────────
     await doStart();
     // ── Background update check (after 10 s to not slow startup) ─────────────
