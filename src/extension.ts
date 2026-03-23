@@ -68,7 +68,7 @@ async function doStart(): Promise<void> {
 
     const tag = state.isCustom
       ? 'custom'
-      : (state.installedTag ?? 'unknown');
+      : (state.installedReleaseId ?? 'unknown');
     setStatus(
       `ForgeLSP: Running (${tag})`,
       `ForgeLSP is active. Binary: ${state.binaryPath}`,
@@ -187,7 +187,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (wasRunning) await doStart();
         const state = loadState(storageDir);
         vscode.window.showInformationMessage(
-          `ForgeLSP binary updated to ${state.installedTag ?? 'latest'}.`
+          `ForgeLSP binary updated to ${state.installedReleaseId ?? 'latest'}.`
         );
       } catch (err) {
         outputChannel.appendLine(`[ForgeLSP] Force-update failed: ${err}`);
@@ -298,7 +298,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
       } else {
         vscode.window.showInformationMessage(
-          `ForgeLSP installed: ${state.installedTag ?? 'unknown'}\nLatest available: ${latestTag}\nBinary: ${state.binaryPath}`
+          `ForgeLSP installed: ${state.installedReleaseId ?? 'unknown'}\nLatest available: ${latestTag}\nBinary: ${state.binaryPath}`
         );
       }
     })
@@ -313,7 +313,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const lines: string[] = [
         `Status:        ${running ? '✓ Running' : '✗ Stopped'}`,
         `Binary:        ${state.binaryPath || '(none)'}`,
-        `Version:       ${state.isCustom ? 'custom' : (state.installedTag ?? 'unknown')}`,
+        `Version:       ${state.isCustom ? 'custom' : (state.installedReleaseId ?? 'unknown')}`,
         `Custom binary: ${state.isCustom ? 'Yes' : 'No'}`,
         `Storage dir:   ${storageDir}`,
         `Config:        ${findForgeConfig() ?? '(none)'}`,
@@ -354,7 +354,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   )
   context.subscriptions.push(
-    vscode.commands.registerCommand('forgevsc.search', async () => {
+    vscode.commands.registerCommand('forgescript.search', async () => {
       await runSearch();
     })
   );

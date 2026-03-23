@@ -42,7 +42,6 @@ exports.forceUpdate = forceUpdate;
 exports.checkForUpdate = checkForUpdate;
 exports.setCustomBinary = setCustomBinary;
 exports.resetBinary = resetBinary;
-const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const https = __importStar(require("https"));
@@ -73,13 +72,12 @@ function stateFilePath(storageDir) {
     return path.join(storageDir, STATE_FILE);
 }
 function loadState(storageDir) {
-    const file = stateFilePath(storageDir);
     try {
-        const raw = fs.readFileSync(file, 'utf8');
+        const raw = fs.readFileSync(stateFilePath(storageDir), 'utf8');
         return JSON.parse(raw);
     }
     catch {
-        return { binaryPath: '', isCustom: false, installedTag: null };
+        return { binaryPath: '', isCustom: false, installedReleaseId: null };
     }
 }
 function saveState(storageDir, state) {
@@ -91,17 +89,12 @@ function httpsGet(url, headers = {}) {
     return new Promise((resolve, reject) => {
         const req = https.get(url, { headers: { 'User-Agent': USER_AGENT, ...headers } }, (res) => {
             if (res.statusCode === 302 || res.statusCode === 301) {
-                if (res.headers.location) {
-                    resolve(httpsGet(res.headers.location, headers));
-                    return;
-                }
-                reject(new Error(`Redirect with no location header (${res.statusCode})`));
-                return;
+                if (res.headers.location)
+                    return resolve(httpsGet(res.headers.location, headers));
+                return reject(new Error(`Redirect with no location header (${res.statusCode})`));
             }
-            if (res.statusCode !== 200) {
-                reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-                return;
-            }
+            if (res.statusCode !== 200)
+                return reject(new Error(`HTTP ${res.statusCode}`));
             const chunks = [];
             res.on('data', (c) => chunks.push(c));
             res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
@@ -113,212 +106,153 @@ function httpsGet(url, headers = {}) {
 function downloadFile(url, dest, progress) {
     return new Promise((resolve, reject) => {
         const follow = (u) => {
-            const req = https.get(u, { headers: { 'User-Agent': USER_AGENT } }, (res) => {
+            https.get(u, { headers: { 'User-Agent': USER_AGENT } }, (res) => {
                 if (res.statusCode === 302 || res.statusCode === 301) {
-                    if (res.headers.location) {
-                        follow(res.headers.location);
-                        return;
-                    }
-                    reject(new Error('Redirect with no location'));
-                    return;
+                    if (res.headers.location)
+                        return follow(res.headers.location);
+                    return reject(new Error('Redirect with no location'));
                 }
-                if (res.statusCode !== 200) {
-                    reject(new Error(`HTTP ${res.statusCode}`));
-                    return;
-                }
+                if (res.statusCode !== 200)
+                    return reject(new Error(`HTTP ${res.statusCode}`));
                 const total = parseInt(res.headers['content-length'] ?? '0', 10);
                 let received = 0;
                 const out = (0, fs_1.createWriteStream)(dest);
                 res.on('data', (chunk) => {
                     received += chunk.length;
-                    if (total > 0 && progress) {
+                    if (total && progress)
                         progress(Math.round((received / total) * 100));
-                    }
                 });
                 res.pipe(out);
                 out.on('finish', () => out.close(() => resolve()));
                 out.on('error', reject);
                 res.on('error', reject);
-            });
-            req.on('error', reject);
+            }).on('error', reject);
         };
         follow(url);
     });
 }
 // ─── Checksum parsing ──────────────────────────────────────────────────────
-/**
- * Tries to extract sha256 checksums from the GitHub release body text.
- * Falls back to the hardcoded KNOWN_CHECKSUMS map.
- *
- * Expected format in release body:
- *   sha256:aaabbb  or  sha256:aaabbb\nfilename
- */
 function parseChecksumsFromBody(body) {
     const result = {};
-    // Match lines like: * ForgeLSP-linux-x86_64\nsha256:hexhex
-    const assetPattern = /\*\s*(ForgeLSP-[^\n]+)\s*\nsha256:([a-fA-F0-9]{64})/g;
+    const pattern = /\*\s*(ForgeLSP-[^\n]+)\s*\nsha256:([a-fA-F0-9]{64})/g;
     let match;
-    while ((match = assetPattern.exec(body)) !== null) {
-        result[match[1].trim()] = match[2].trim();
+    while ((match = pattern.exec(body)) !== null) {
+        result[match[1].trim()] = match[2].toLowerCase();
+    }
+    return result;
+}
+function parseChecksumFile(text) {
+    const result = {};
+    for (const line of text.split(/\r?\n/)) {
+        const match = /^([a-fA-F0-9]{64})\s+\*?(.+)$/.exec(line.trim());
+        if (match)
+            result[match[2].trim()] = match[1].toLowerCase();
     }
     return result;
 }
 // ─── GitHub release fetching ───────────────────────────────────────────────
-/**
- * Fetches latest GitHub release metadata and extracts:
- *  - correct platform asset
- *  - checksum file (if present)
- */
 async function fetchLatestRelease() {
     const body = await httpsGet(RELEASES_API_URL);
     const release = JSON.parse(body);
-    const tag = release.tag_name ?? 'unknown';
     const assetName = getPlatformAssetName();
     const assets = release.assets ?? [];
     const binaryAsset = assets.find(a => a.name === assetName);
-    if (!binaryAsset) {
-        throw new Error(`No asset named "${assetName}" found in release ${tag}.`);
-    }
-    // Look for a checksum file in release assets
+    if (!binaryAsset)
+        throw new Error(`Missing asset: ${assetName}`);
     const checksumAsset = assets.find(a => a.name.toLowerCase().includes('checksum'));
     let checksums = {};
+    // 1. Try checksum file
     if (checksumAsset) {
-        const checksumBody = await httpsGet(checksumAsset.browser_download_url);
-        checksums = parseChecksumFile(checksumBody);
+        const text = await httpsGet(checksumAsset.browser_download_url);
+        checksums = parseChecksumFile(text);
+    }
+    // 2. Fallback to release body
+    if (Object.keys(checksums).length === 0 && release.body) {
+        checksums = parseChecksumsFromBody(release.body);
     }
     return {
-        tag,
+        tag: release.tag_name ?? 'unknown',
+        id: release.id,
         assetName,
         downloadUrl: binaryAsset.browser_download_url,
         checksums,
     };
 }
-function parseChecksumFile(text) {
-    const result = {};
-    const lines = text.split(/\r?\n/);
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed)
-            continue;
-        const match = /^([a-fA-F0-9]{64})\s+\*?(.+)$/.exec(trimmed);
-        if (!match)
-            continue;
-        const [, hash, filename] = match;
-        result[filename.trim()] = hash.toLowerCase();
-    }
-    return result;
-}
 // ─── SHA256 verification ───────────────────────────────────────────────────
 async function sha256File(filePath) {
     return new Promise((resolve, reject) => {
         const hash = crypto.createHash('sha256');
-        const stream = fs.createReadStream(filePath);
-        stream.on('data', (d) => hash.update(d));
-        stream.on('end', () => resolve(hash.digest('hex')));
-        stream.on('error', reject);
+        fs.createReadStream(filePath)
+            .on('data', d => hash.update(d))
+            .on('end', () => resolve(hash.digest('hex')))
+            .on('error', reject);
     });
 }
-// ─── Install / update ──────────────────────────────────────────────────────
+// ─── Install ───────────────────────────────────────────────────────────────
 async function installBinary(storageDir, release, outputChannel) {
     fs.mkdirSync(storageDir, { recursive: true });
-    const isWindows = process.platform === 'win32';
-    const destName = isWindows ? 'ForgeLSP.exe' : 'ForgeLSP';
-    const destPath = path.join(storageDir, destName);
-    const tmpPath = destPath + '.tmp';
-    outputChannel.appendLine(`[ForgeLSP] Downloading ${release.assetName} @ ${release.tag} …`);
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `ForgeLSP: Downloading binary ${release.tag}`,
-        cancellable: false,
-    }, async (progress) => {
-        let last = 0;
-        await downloadFile(release.downloadUrl, tmpPath, (pct) => {
-            progress.report({ increment: pct - last, message: `${pct}%` });
-            last = pct;
-        });
-    });
-    outputChannel.appendLine('[ForgeLSP] Verifying checksum …');
-    const actual = await sha256File(tmpPath);
+    const dest = path.join(storageDir, process.platform === 'win32' ? 'ForgeLSP.exe' : 'ForgeLSP');
+    const tmp = dest + '.tmp';
+    outputChannel.appendLine(`[ForgeLSP] Downloading ${release.assetName} @ ${release.tag}`);
+    await downloadFile(release.downloadUrl, tmp);
+    const actual = await sha256File(tmp);
     const expected = release.checksums[release.assetName];
-    if (expected && actual.toLowerCase() !== expected.toLowerCase()) {
-        fs.unlinkSync(tmpPath);
-        throw new Error(`SHA256 mismatch for ${release.assetName}!\n  expected: ${expected}\n  actual:   ${actual}`);
+    if (expected && actual !== expected) {
+        fs.unlinkSync(tmp);
+        throw new Error(`Checksum mismatch\nexpected: ${expected}\nactual: ${actual}`);
     }
-    else if (!expected) {
-        outputChannel.appendLine('[ForgeLSP] ⚠ No known checksum to verify against — skipping.');
+    if (!expected) {
+        outputChannel.appendLine('[ForgeLSP] ⚠ No checksum available');
     }
-    else {
-        outputChannel.appendLine('[ForgeLSP] ✓ Checksum OK');
-    }
-    // Atomically replace
-    if (fs.existsSync(destPath))
-        fs.unlinkSync(destPath);
-    fs.renameSync(tmpPath, destPath);
-    if (!isWindows) {
-        fs.chmodSync(destPath, 0o755);
-    }
-    outputChannel.appendLine(`[ForgeLSP] Binary installed: ${destPath}`);
-    return destPath;
+    if (fs.existsSync(dest))
+        fs.unlinkSync(dest);
+    fs.renameSync(tmp, dest);
+    if (process.platform !== 'win32')
+        fs.chmodSync(dest, 0o755);
+    return dest;
 }
 // ─── Public API ────────────────────────────────────────────────────────────
-/**
- * Returns the path to a ready-to-use binary, downloading it if necessary.
- * Mutates and persists BinaryState.
- */
-async function ensureBinary(storageDir, outputChannel) {
+async function ensureBinary(storageDir, out) {
     let state = loadState(storageDir);
-    // User has pinned a custom binary — verify it still exists
-    if (state.isCustom) {
-        if (fs.existsSync(state.binaryPath)) {
-            outputChannel.appendLine(`[ForgeLSP] Using custom binary: ${state.binaryPath}`);
-            return state;
-        }
-        outputChannel.appendLine('[ForgeLSP] ⚠ Custom binary not found, falling back to official.');
-        state.isCustom = false;
-    }
-    // Official binary — check if it exists
-    const isWindows = process.platform === 'win32';
-    const officialPath = path.join(storageDir, isWindows ? 'ForgeLSP.exe' : 'ForgeLSP');
-    if (!fs.existsSync(officialPath)) {
-        outputChannel.appendLine('[ForgeLSP] Binary not found — downloading …');
+    if (state.isCustom && fs.existsSync(state.binaryPath))
+        return state;
+    const dest = path.join(storageDir, process.platform === 'win32' ? 'ForgeLSP.exe' : 'ForgeLSP');
+    if (!fs.existsSync(dest)) {
         const release = await fetchLatestRelease();
-        const binaryPath = await installBinary(storageDir, release, outputChannel);
-        state = { binaryPath, isCustom: false, installedTag: release.tag };
+        const binaryPath = await installBinary(storageDir, release, out);
+        state = {
+            binaryPath,
+            isCustom: false,
+            installedReleaseId: release.id
+        };
         saveState(storageDir, state);
         return state;
     }
-    state.binaryPath = officialPath;
+    state.binaryPath = dest;
     saveState(storageDir, state);
     return state;
 }
-/**
- * Forces a fresh download of the latest official binary regardless of current state.
- */
-async function forceUpdate(storageDir, outputChannel) {
-    outputChannel.appendLine('[ForgeLSP] Force-updating binary …');
+async function forceUpdate(storageDir, out) {
     const release = await fetchLatestRelease();
-    const binaryPath = await installBinary(storageDir, release, outputChannel);
-    const state = { binaryPath, isCustom: false, installedTag: release.tag };
+    const binaryPath = await installBinary(storageDir, release, out);
+    const state = {
+        binaryPath,
+        isCustom: false,
+        installedReleaseId: release.id
+    };
     saveState(storageDir, state);
     return state;
 }
-/**
- * Checks GitHub for a newer release tag. Returns the release if an update
- * is available, otherwise null.
- */
 async function checkForUpdate(storageDir) {
     const state = loadState(storageDir);
     if (state.isCustom)
         return null;
     const release = await fetchLatestRelease();
-    if (release.tag !== state.installedTag) {
+    if (release.id !== state.installedReleaseId) {
         return release;
     }
     return null;
 }
-/**
- * Pins a user-supplied binary path. Returns an error string or null on success.
- */
 function setCustomBinary(storageDir, binaryPath) {
     if (!fs.existsSync(binaryPath)) {
         return `File not found: ${binaryPath}`;
@@ -338,19 +272,17 @@ function setCustomBinary(storageDir, binaryPath) {
     const state = {
         binaryPath,
         isCustom: true,
-        installedTag: null,
+        installedReleaseId: null,
     };
     saveState(storageDir, state);
     return null;
 }
-/**
- * Clears the custom binary pin, returning to the official binary.
- */
 function resetBinary(storageDir) {
     const state = loadState(storageDir);
     state.isCustom = false;
     const isWindows = process.platform === 'win32';
     state.binaryPath = path.join(storageDir, isWindows ? 'ForgeLSP.exe' : 'ForgeLSP');
+    state.installedReleaseId = null;
     saveState(storageDir, state);
 }
 //# sourceMappingURL=binaryManager.js.map

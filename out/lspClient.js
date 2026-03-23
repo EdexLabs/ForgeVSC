@@ -78,6 +78,9 @@ function createClient(binaryPath, initOptions, outputChannel, storageDir) {
     if (initOptions?.customColors) {
         initializationOptions['customColors'] = initOptions.customColors;
     }
+    if (initOptions?.constantCustomColors !== undefined) {
+        initializationOptions['constantCustomColors'] = initOptions.constantCustomColors;
+    }
     // Expose cache path inside extension storage so it survives restarts
     initializationOptions['cachePath'] = path.join(storageDir, 'metadata.json');
     const clientOptions = {

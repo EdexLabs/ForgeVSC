@@ -39,9 +39,9 @@ export interface EnumMeta { name: string; values: string[]; extension?: string; 
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
-const CK_FNS = 'forgevsc.docsCache.functions';
-const CK_ENUMS = 'forgevsc.docsCache.enums';
-const CK_EVENTS = 'forgevsc.docsCache.events';
+const CK_FNS = 'forgescript.docsCache.functions';
+const CK_ENUMS = 'forgescript.docsCache.enums';
+const CK_EVENTS = 'forgescript.docsCache.events';
 
 // ─── Module state ──────────────────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ let inEvents: Promise<EventMeta[]> | null = null;
 function getJson(url: string): Promise<unknown> {
     return new Promise((resolve, reject) => {
         const go = (u: string) => {
-            https.get(u, { headers: { 'User-Agent': 'forgevsc-docs/2.0' } }, res => {
+            https.get(u, { headers: { 'User-Agent': 'forgescript-docs/2.0' } }, res => {
                 if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) { go(res.headers.location); return; }
                 if (res.statusCode !== 200) { reject(new Error(`HTTP ${res.statusCode}`)); return; }
                 const b: Buffer[] = [];
@@ -335,7 +335,7 @@ class ExplorerProvider implements vscode.TreeDataProvider<DocNode> {
             item.description = n.eventMeta.fields?.length ? `${n.eventMeta.fields.length} fields` : undefined;
             item.tooltip = n.eventMeta.description?.split('\n')[0] ?? n.eventMeta.name;
             item.contextValue = 'event';
-            item.command = { command: 'forgevsc.openEventDocs', title: '', arguments: [n.eventMeta] };
+            item.command = { command: 'forgescript.openEventDocs', title: '', arguments: [n.eventMeta] };
             return item;
         }
 
@@ -346,7 +346,7 @@ class ExplorerProvider implements vscode.TreeDataProvider<DocNode> {
             item.id = `guide::${n.uid}`;
             item.iconPath = new vscode.ThemeIcon('book');
             item.contextValue = isFavorite(g.id) ? 'guide.favorite' : 'guide';
-            item.command = { command: 'forgevsc.openGuide', title: '', arguments: [g] };
+            item.command = { command: 'forgescript.openGuide', title: '', arguments: [g] };
             return item;
         }
 
@@ -517,7 +517,7 @@ function showPanel(title: string, html: string): void {
         activePanel.reveal(vscode.ViewColumn.One, true);
     } else {
         activePanel = vscode.window.createWebviewPanel(
-            'forgevsc.docs', title, { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
+            'forgescript.docs', title, { viewColumn: vscode.ViewColumn.One, preserveFocus: true },
             { enableScripts: false, retainContextWhenHidden: false }
         );
         activePanel.webview.html = html;
@@ -877,7 +877,7 @@ export function registerDocsView(extCtx: vscode.ExtensionContext, channel: vscod
     const provider = new ExplorerProvider();
 
     extCtx.subscriptions.push(
-        vscode.window.createTreeView('forgevsc.explorerView', {
+        vscode.window.createTreeView('forgescript.explorerView', {
             treeDataProvider: provider,
             showCollapseAll: true,
         })
@@ -885,23 +885,23 @@ export function registerDocsView(extCtx: vscode.ExtensionContext, channel: vscod
 
     extCtx.subscriptions.push(
         // ── Docs openers ──
-        vscode.commands.registerCommand('forgevsc.openFunctionDocs', (input: FnMeta | string) => {
+        vscode.commands.registerCommand('forgescript.openFunctionDocs', (input: FnMeta | string) => {
             if (typeof input === 'string') { getFunctions().then(fns => { const f = fns.find(f => f.name.toLowerCase() === input.toLowerCase()); f ? showPanel(f.name, buildFnHtml(f)) : vscode.window.showErrorMessage(`Function "${input}" not found.`); }); }
             else { showPanel(input.name, buildFnHtml(input)); }
         }),
 
-        vscode.commands.registerCommand('forgevsc.openEnumDocs', (input: EnumMeta | string) => {
+        vscode.commands.registerCommand('forgescript.openEnumDocs', (input: EnumMeta | string) => {
             if (typeof input === 'string') { getEnums().then(es => { const e = es.find(e => e.name.toLowerCase() === input.toLowerCase()); e ? showPanel(e.name, buildEnumHtml(e)) : vscode.window.showErrorMessage(`Enum "${input}" not found.`); }); }
             else { showPanel(input.name, buildEnumHtml(input)); }
         }),
 
-        vscode.commands.registerCommand('forgevsc.openEventDocs', (input: EventMeta | string) => {
+        vscode.commands.registerCommand('forgescript.openEventDocs', (input: EventMeta | string) => {
             if (typeof input === 'string') { getEvents().then(es => { const e = es.find(e => e.name.toLowerCase() === input.toLowerCase()); e ? showPanel(e.name, buildEventHtml(e)) : vscode.window.showErrorMessage(`Event "${input}" not found.`); }); }
             else { showPanel(input.name, buildEventHtml(input)); }
         }),
 
         // Open guide in webview panel
-        vscode.commands.registerCommand('forgevsc.openGuide', (input: GuideMetadata | number | string) => {
+        vscode.commands.registerCommand('forgescript.openGuide', (input: GuideMetadata | number | string) => {
             const open = (g: GuideMetadata) => showPanel(guideTitle(g), buildGuideHtml(g));
             if (typeof input === 'object' && input) { open(input as GuideMetadata); return; }
             getGuides().then(all => {

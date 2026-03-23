@@ -2,35 +2,28 @@
 
 Language support for **ForgeScript** inside JavaScript and TypeScript files, powered by the [ForgeLSP](https://github.com/EdexLabs/ForgeLSP) language server.
 
----
-
 ## Features
 
-- **Diagnostics** — real-time error highlighting in `.js` and `.ts` files
-- **Completions** — `$function` auto-complete with argument hints
-- **Hover** — inline documentation for every Forge function
-- **Signature help** — argument info as you type
-- **Semantic highlighting** — Forge functions stand out
+- Highlighting for `.forge` files.
+- Integration with ForgeLSP for diagnostics and completions.
+- Searchable documentation for functions, enums, and events.
+- Guides for common tasks.
 
----
+## Configuration
 
-## Configuration — `forgeconfig.json`
+The extension uses `forgeconfig.json` for configuration.
 
-Place a `forgeconfig.json` in your workspace root:
+Example `forgeconfig.json`:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/EdexLabs/ForgeVSC/main/forgeconfig.schema.json",
+  "$schema": "https://raw.githubusercontent.com/EdexLabs/ForgeScript/main/forgeconfig.schema.json",
   "extensions": [
-    "github:tryforge/forgescript#main",
-    {
-      "extension": "my-ext",
-      "functions": "https://example.com/functions.json",
-      "enums": "https://example.com/enums.json",
-      "events": "https://example.com/events.json"
-    }
+    "github:tryforge/forgescript#dev"
   ],
-  "custom_functions_path": "./src/custom-functions"
+  "custom_functions_path": "addPathHereRelativeToFile",
+  "custom_colors": ["#ff0000", "#00ff00", "#0000ff"],
+  "constant_custom_colors": true
 }
 ```
 

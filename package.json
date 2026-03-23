@@ -2,7 +2,7 @@
   "name": "forgescript",
   "displayName": "ForgeScript",
   "description": "Language support for Forgescript via ForgeLSP",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "publisher": "EdexLabs",
   "icon": "icon.png",
   "license": "GPL-3.0",
@@ -32,19 +32,19 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "forgevsc",
-          "title": "ForgeVSC",
+          "id": "forgescript",
+          "title": "ForgeScript",
           "icon": "$(symbol-function)"
         }
       ]
     },
     "views": {
-      "forgevsc": [
+      "forgescript": [
         {
-          "id": "forgevsc.explorerView",
+          "id": "forgescript.explorerView",
           "name": "Explorer",
           "icon": "$(symbol-function)",
-          "contextualTitle": "ForgeVSC"
+          "contextualTitle": "ForgeScript"
         }
       ]
     },
@@ -130,63 +130,63 @@
         "title": "ForgeScript: Start Server"
       },
       {
-        "command": "forgevsc.openGuide",
-        "title": "ForgeVSC: Open Guide",
+        "command": "forgescript.openGuide",
+        "title": "ForgeScript: Open Guide",
         "icon": "$(book)"
       },
       {
-        "command": "forgevsc.favoriteGuide",
-        "title": "ForgeVSC: Add to Favorites",
+        "command": "forgescript.favoriteGuide",
+        "title": "ForgeScript: Add to Favorites",
         "icon": "$(star-empty)"
       },
       {
-        "command": "forgevsc.unfavoriteGuide",
-        "title": "ForgeVSC: Remove from Favorites",
+        "command": "forgescript.unfavoriteGuide",
+        "title": "ForgeScript: Remove from Favorites",
         "icon": "$(star-full)"
       },
       {
-        "command": "forgevsc.openGuideExternal",
-        "title": "ForgeVSC: Open Guide on Docs Site",
+        "command": "forgescript.openGuideExternal",
+        "title": "ForgeScript: Open Guide on Docs Site",
         "icon": "$(link-external)"
       },
       {
-        "command": "forgevsc.searchGuides",
-        "title": "ForgeVSC: Search Guides",
+        "command": "forgescript.searchGuides",
+        "title": "ForgeScript: Search Guides",
         "icon": "$(search)"
       },
       {
-        "command": "forgevsc.reloadGuides",
-        "title": "ForgeVSC: Reload Guides",
+        "command": "forgescript.reloadGuides",
+        "title": "ForgeScript: Reload Guides",
         "icon": "$(refresh)"
       },
       {
-        "command": "forgevsc.openFunctionDocs",
-        "title": "ForgeVSC: Open Function Docs",
+        "command": "forgescript.openFunctionDocs",
+        "title": "ForgeScript: Open Function Docs",
         "icon": "$(symbol-function)"
       },
       {
-        "command": "forgevsc.searchFunctions",
-        "title": "ForgeVSC: Search Functions",
+        "command": "forgescript.searchFunctions",
+        "title": "ForgeScript: Search Functions",
         "icon": "$(search)"
       },
       {
-        "command": "forgevsc.reloadFunctions",
-        "title": "ForgeVSC: Reload Functions",
+        "command": "forgescript.reloadFunctions",
+        "title": "ForgeScript: Reload Functions",
         "icon": "$(refresh)"
       },
       {
-        "command": "forgevsc.openEnumDocs",
-        "title": "ForgeVSC: Open Enum Docs",
+        "command": "forgescript.openEnumDocs",
+        "title": "ForgeScript: Open Enum Docs",
         "icon": "$(symbol-enum)"
       },
       {
-        "command": "forgevsc.openEventDocs",
-        "title": "ForgeVSC: Open Event Docs",
+        "command": "forgescript.openEventDocs",
+        "title": "ForgeScript: Open Event Docs",
         "icon": "$(symbol-event)"
       },
       {
-        "command": "forgevsc.search",
-        "title": "ForgeVSC: Search",
+        "command": "forgescript.search",
+        "title": "ForgeScript: Search",
         "icon": "$(search)"
       }
     ],
@@ -232,97 +232,97 @@
           "command": "forgescript.start"
         },
         {
-          "command": "forgevsc.searchFunctions"
+          "command": "forgescript.searchFunctions"
         },
         {
-          "command": "forgevsc.searchGuides"
+          "command": "forgescript.searchGuides"
         },
         {
-          "command": "forgevsc.reloadFunctions"
+          "command": "forgescript.reloadFunctions"
         },
         {
-          "command": "forgevsc.reloadGuides"
+          "command": "forgescript.reloadGuides"
         },
         {
-          "command": "forgevsc.openFunctionDocs",
+          "command": "forgescript.openFunctionDocs",
           "when": "false"
         },
         {
-          "command": "forgevsc.openEnumDocs",
+          "command": "forgescript.openEnumDocs",
           "when": "false"
         },
         {
-          "command": "forgevsc.openEventDocs",
+          "command": "forgescript.openEventDocs",
           "when": "false"
         },
         {
-          "command": "forgevsc.openGuide",
+          "command": "forgescript.openGuide",
           "when": "false"
         },
         {
-          "command": "forgevsc.openGuideExternal",
+          "command": "forgescript.openGuideExternal",
           "when": "false"
         },
         {
-          "command": "forgevsc.favoriteGuide",
+          "command": "forgescript.favoriteGuide",
           "when": "false"
         },
         {
-          "command": "forgevsc.unfavoriteGuide",
+          "command": "forgescript.unfavoriteGuide",
           "when": "false"
         },
         {
-          "command": "forgevsc.search"
+          "command": "forgescript.search"
         }
       ],
       "view/title": [
         {
-          "command": "forgevsc.searchFunctions",
-          "when": "view == forgevsc.explorerView",
+          "command": "forgescript.searchFunctions",
+          "when": "view == forgescript.explorerView",
           "group": "navigation"
         },
         {
-          "command": "forgevsc.reloadFunctions",
-          "when": "view == forgevsc.explorerView",
+          "command": "forgescript.reloadFunctions",
+          "when": "view == forgescript.explorerView",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "forgevsc.favoriteGuide",
-          "when": "view == forgevsc.explorerView && viewItem == guide",
+          "command": "forgescript.favoriteGuide",
+          "when": "view == forgescript.explorerView && viewItem == guide",
           "group": "inline"
         },
         {
-          "command": "forgevsc.unfavoriteGuide",
-          "when": "view == forgevsc.explorerView && viewItem == guide.favorite",
+          "command": "forgescript.unfavoriteGuide",
+          "when": "view == forgescript.explorerView && viewItem == guide.favorite",
           "group": "inline"
         },
         {
-          "command": "forgevsc.openGuideExternal",
-          "when": "view == forgevsc.explorerView && (viewItem == guide || viewItem == guide.favorite)",
+          "command": "forgescript.openGuideExternal",
+          "when": "view == forgescript.explorerView && (viewItem == guide || viewItem == guide.favorite)",
           "group": "inline"
         },
         {
-          "command": "forgevsc.favoriteGuide",
-          "when": "view == forgevsc.explorerView && viewItem == guide",
+          "command": "forgescript.favoriteGuide",
+          "when": "view == forgescript.explorerView && viewItem == guide",
           "group": "guides@1"
         },
         {
-          "command": "forgevsc.unfavoriteGuide",
-          "when": "view == forgevsc.explorerView && viewItem == guide.favorite",
+          "command": "forgescript.unfavoriteGuide",
+          "when": "view == forgescript.explorerView && viewItem == guide.favorite",
           "group": "guides@1"
         },
         {
-          "command": "forgevsc.openGuideExternal",
-          "when": "view == forgevsc.explorerView && (viewItem == guide || viewItem == guide.favorite)",
+          "command": "forgescript.openGuideExternal",
+          "when": "view == forgescript.explorerView && (viewItem == guide || viewItem == guide.favorite)",
           "group": "guides@2"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "forgevsc.search",
+        "command": "forgescript.search",
         "key": "ctrl+alt+s",
         "mac": "cmd+alt+s"
       }

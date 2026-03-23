@@ -36,9 +36,9 @@ export interface GuideMetadata {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
-const GUIDES_URL  = 'https://raw.githubusercontent.com/tryforge/ForgeVSC/refs/heads/metadata/guides.json';
-const CACHE_KEY   = 'forgevsc.guides.cache';
-const FAVS_KEY    = 'forgevsc.guides.favorites';
+const GUIDES_URL  = 'https://raw.githubusercontent.com/tryforge/ForgeScript/refs/heads/metadata/guides.json';
+const CACHE_KEY   = 'forgescript.guides.cache';
+const FAVS_KEY    = 'forgescript.guides.favorites';
 export const DOCS_BASE = 'https://docs.botforge.org/';
 
 // ─── Module state ──────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ export function initGuides(ctx: vscode.ExtensionContext): void {
 function fetchJson<T>(url: string): Promise<T> {
     return new Promise((resolve, reject) => {
         const follow = (u: string) => {
-            https.get(u, { headers: { 'User-Agent': 'ForgeVSC/guides' } }, res => {
+            https.get(u, { headers: { 'User-Agent': 'ForgeScript/guides' } }, res => {
                 if (res.statusCode === 301 || res.statusCode === 302) {
                     res.headers.location ? follow(res.headers.location) : reject(new Error('Redirect without location'));
                     return;

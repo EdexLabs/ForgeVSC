@@ -18,6 +18,7 @@ interface ForgeConfigJson {
   custom_functions_path?: string | string[];
   custom_functions_json?: string;
   custom_colors?: string[];
+  constant_custom_colors?: boolean;
 }
 
 // ─── LSP initialization options (matches the Rust ForgeConfig struct) ─────
@@ -35,6 +36,7 @@ export interface LspInitOptions {
   customFunctionsJson?: string;
   cachePath?: string;
   customColors?: string[];
+  constantCustomColors?: boolean;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -148,6 +150,11 @@ export function readForgeConfig(
   // ── custom_colors ──────────────────────────────────────────────────────
   if (json.custom_colors && Array.isArray(json.custom_colors)) {
     opts.customColors = json.custom_colors;
+  }
+
+  // ── constant_custom_colors ─────────────────────────────────────────────
+  if (typeof json.constant_custom_colors === 'boolean') {
+    opts.constantCustomColors = json.constant_custom_colors;
   }
 
   outputChannel.appendLine(

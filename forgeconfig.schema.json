@@ -63,6 +63,11 @@
         "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
       },
       "description": "Custom hex colors for functions."
+    },
+    "constant_custom_colors": {
+      "type": "boolean",
+      "default": false,
+      "description": "If enabled, custom colors will be assigned consistently based on function name rather than a rotating pattern."
     }
   }
 }

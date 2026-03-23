@@ -73,7 +73,7 @@ async function doStart() {
         await (0, lspClient_1.startClient)(client);
         const tag = state.isCustom
             ? 'custom'
-            : (state.installedTag ?? 'unknown');
+            : (state.installedReleaseId ?? 'unknown');
         setStatus(`ForgeLSP: Running (${tag})`, `ForgeLSP is active. Binary: ${state.binaryPath}`, 'forgescript.showStatus');
         outputChannel.appendLine(`[ForgeLSP] Server started. Binary: ${state.binaryPath}`);
         // Re-apply decorations to all visible editors once client starts
@@ -161,7 +161,7 @@ async function activate(context) {
             if (wasRunning)
                 await doStart();
             const state = (0, binaryManager_1.loadState)(storageDir);
-            vscode.window.showInformationMessage(`ForgeLSP binary updated to ${state.installedTag ?? 'latest'}.`);
+            vscode.window.showInformationMessage(`ForgeLSP binary updated to ${state.installedReleaseId ?? 'latest'}.`);
         }
         catch (err) {
             outputChannel.appendLine(`[ForgeLSP] Force-update failed: ${err}`);
@@ -243,7 +243,7 @@ async function activate(context) {
             vscode.window.showInformationMessage(`ForgeLSP: Using CUSTOM binary\nPath: ${state.binaryPath}\nLatest official: ${latestTag}`);
         }
         else {
-            vscode.window.showInformationMessage(`ForgeLSP installed: ${state.installedTag ?? 'unknown'}\nLatest available: ${latestTag}\nBinary: ${state.binaryPath}`);
+            vscode.window.showInformationMessage(`ForgeLSP installed: ${state.installedReleaseId ?? 'unknown'}\nLatest available: ${latestTag}\nBinary: ${state.binaryPath}`);
         }
     }));
     context.subscriptions.push(vscode.commands.registerCommand('forgescript.showStatus', async () => {
@@ -253,7 +253,7 @@ async function activate(context) {
         const lines = [
             `Status:        ${running ? '✓ Running' : '✗ Stopped'}`,
             `Binary:        ${state.binaryPath || '(none)'}`,
-            `Version:       ${state.isCustom ? 'custom' : (state.installedTag ?? 'unknown')}`,
+            `Version:       ${state.isCustom ? 'custom' : (state.installedReleaseId ?? 'unknown')}`,
             `Custom binary: ${state.isCustom ? 'Yes' : 'No'}`,
             `Storage dir:   ${storageDir}`,
             `Config:        ${(0, configReader_1.findForgeConfig)() ?? '(none)'}`,
@@ -279,7 +279,7 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('forgescript.createConfig', async () => {
         await (0, configReader_1.openOrCreateForgeConfig)(outputChannel);
     }));
-    context.subscriptions.push(vscode.commands.registerCommand('forgevsc.search', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('forgescript.search', async () => {
         await (0, docsView_1.runSearch)();
     }));
     // ── Watch forgeconfig.json for changes ───────────────────────────────────

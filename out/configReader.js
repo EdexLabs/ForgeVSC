@@ -148,6 +148,10 @@ function readForgeConfig(configPath, outputChannel) {
     if (json.custom_colors && Array.isArray(json.custom_colors)) {
         opts.customColors = json.custom_colors;
     }
+    // ── constant_custom_colors ─────────────────────────────────────────────
+    if (typeof json.constant_custom_colors === 'boolean') {
+        opts.constantCustomColors = json.constant_custom_colors;
+    }
     outputChannel.appendLine(`[ForgeLSP] Loaded forgeconfig.json: ${opts.metadataUrls?.length ?? 0} extension(s)` +
         (opts.customFunctionsPath ? `, custom path: ${Array.isArray(opts.customFunctionsPath) ? opts.customFunctionsPath.join(', ') : opts.customFunctionsPath}` : '') +
         (opts.customFunctionsJson ? `, custom JSON: ${opts.customFunctionsJson}` : ''));
