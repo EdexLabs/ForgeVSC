@@ -310,7 +310,7 @@ class ExplorerProvider {
             item.description = n.fn.deprecated ? 'deprecated' : n.fn.experimental ? 'experimental' : undefined;
             item.tooltip = n.fn.description?.split('\n')[0] ?? n.fn.name;
             item.contextValue = 'function';
-            item.command = { command: 'forgevsc.openFunctionDocs', title: '', arguments: [n.fn] };
+            item.command = { command: 'forgescript.openFunctionDocs', title: '', arguments: [n.fn] };
             return item;
         }
         // ── Enum leaf ──
@@ -321,7 +321,7 @@ class ExplorerProvider {
             item.description = `${n.enumMeta.values.length} values`;
             item.tooltip = n.enumMeta.values.slice(0, 6).join(', ') + (n.enumMeta.values.length > 6 ? '…' : '');
             item.contextValue = 'enum';
-            item.command = { command: 'forgevsc.openEnumDocs', title: '', arguments: [n.enumMeta] };
+            item.command = { command: 'forgescript.openEnumDocs', title: '', arguments: [n.enumMeta] };
             return item;
         }
         // ── Event leaf ──
@@ -886,32 +886,32 @@ function registerDocsView(extCtx, channel) {
         });
     }), 
     // Open guide external → webview (same as openGuide)
-    vscode.commands.registerCommand('forgevsc.openGuideExternal', (node) => {
+    vscode.commands.registerCommand('forgescript.openGuideExternal', (node) => {
         if (!node?.guide)
             return;
         showPanel((0, guides_1.guideTitle)(node.guide), buildGuideHtml(node.guide));
     }), 
     // Favorite / unfavorite
-    vscode.commands.registerCommand('forgevsc.favoriteGuide', async (node) => {
+    vscode.commands.registerCommand('forgescript.favoriteGuide', async (node) => {
         if (!node?.guide)
             return;
         await (0, guides_1.addFavorite)(node.guide.id);
         provider.refresh();
-    }), vscode.commands.registerCommand('forgevsc.unfavoriteGuide', async (node) => {
+    }), vscode.commands.registerCommand('forgescript.unfavoriteGuide', async (node) => {
         if (!node?.guide)
             return;
         await (0, guides_1.removeFavorite)(node.guide.id);
         provider.refresh();
     }), 
     // Search (QuickPick over all data)
-    vscode.commands.registerCommand('forgevsc.searchFunctions', () => runSearch()), vscode.commands.registerCommand('forgevsc.searchGuides', () => runSearch()), 
+    vscode.commands.registerCommand('forgescript.searchFunctions', () => runSearch()), vscode.commands.registerCommand('forgescript.searchGuides', () => runSearch()), 
     // Reload all
-    vscode.commands.registerCommand('forgevsc.reloadFunctions', async () => {
+    vscode.commands.registerCommand('forgescript.reloadFunctions', async () => {
         await reloadAll();
         provider.refresh();
         const [fns, enums, events, guides] = await Promise.all([getFunctions(), getEnums(), getEvents(), (0, guides_1.getGuides)()]);
         vscode.window.showInformationMessage(`ForgeVSC: Reloaded — ${fns.length} functions, ${enums.length} enums, ${events.length} events, ${guides.length} guides.`);
-    }), vscode.commands.registerCommand('forgevsc.reloadGuides', async () => {
+    }), vscode.commands.registerCommand('forgescript.reloadGuides', async () => {
         await (0, guides_1.reloadGuides)();
         provider.refresh();
         const guides = await (0, guides_1.getGuides)();
