@@ -45,7 +45,7 @@ exports.guideTitle = guideTitle;
 exports.guideCategory = guideCategory;
 const https = __importStar(require("https"));
 // ─── Constants ─────────────────────────────────────────────────────────────
-const GUIDES_URL = 'https://raw.githubusercontent.com/tryforge/ForgeScript/refs/heads/metadata/guides.json';
+const GUIDES_URL = 'https://raw.githubusercontent.com/tryforge/ForgeVSC/refs/heads/metadata/guides.json';
 const CACHE_KEY = 'forgescript.guides.cache';
 const FAVS_KEY = 'forgescript.guides.favorites';
 exports.DOCS_BASE = 'https://docs.botforge.org/';

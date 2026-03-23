@@ -36,9 +36,9 @@ export interface GuideMetadata {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
-const GUIDES_URL  = 'https://raw.githubusercontent.com/tryforge/ForgeScript/refs/heads/metadata/guides.json';
-const CACHE_KEY   = 'forgescript.guides.cache';
-const FAVS_KEY    = 'forgescript.guides.favorites';
+const GUIDES_URL = 'https://raw.githubusercontent.com/tryforge/ForgeVSC/refs/heads/metadata/guides.json';
+const CACHE_KEY = 'forgescript.guides.cache';
+const FAVS_KEY = 'forgescript.guides.favorites';
 export const DOCS_BASE = 'https://docs.botforge.org/';
 
 // ─── Module state ──────────────────────────────────────────────────────────
