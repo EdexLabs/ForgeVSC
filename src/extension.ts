@@ -145,6 +145,51 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // ── Register commands ────────────────────────────────────────────────────
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('forgescript.wrapInComment', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
+
+      const selections = editor.selections;
+      await editor.edit(editBuilder => {
+        for (const selection of selections) {
+          const startLine = selection.start.line;
+          let endLine = selection.end.line;
+
+          if (selection.end.character === 0 && endLine > startLine) {
+            endLine--;
+          }
+
+          let minIndentStr: string | null = null;
+          for (let i = startLine; i <= endLine; i++) {
+            const line = editor.document.lineAt(i);
+            if (!line.isEmptyOrWhitespace) {
+              const indent = line.text.match(/^\s*/)?.[0] || '';
+              if (minIndentStr === null || indent.length < minIndentStr.length) {
+                minIndentStr = indent;
+              }
+            }
+          }
+
+          const baseIndent = minIndentStr || '';
+          const replacedLines = [];
+          for (let i = startLine; i <= endLine; i++) {
+            const lineText = editor.document.lineAt(i).text;
+            replacedLines.push(lineText.length > 0 ? `  ${lineText}` : lineText);
+          }
+
+          const newText = `${baseIndent}$c[\n${replacedLines.join('\n')}\n${baseIndent}]`;
+          const rangeToReplace = new vscode.Range(
+            startLine, 0,
+            endLine, editor.document.lineAt(endLine).text.length
+          );
+
+          editBuilder.replace(rangeToReplace, newText);
+        }
+      });
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('forgescript.start', async () => {
       if (isRunning()) {
         vscode.window.showInformationMessage('ForgeLSP is already running.');

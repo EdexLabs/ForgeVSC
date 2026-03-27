@@ -2,7 +2,7 @@
   "name": "forgescript",
   "displayName": "ForgeScript",
   "description": "Language support for Forgescript via ForgeLSP",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "publisher": "EdexLabs",
   "icon": "icon.png",
   "license": "GPL-3.0",
@@ -188,6 +188,10 @@
         "command": "forgescript.search",
         "title": "ForgeScript: Search",
         "icon": "$(search)"
+      },
+      {
+        "command": "forgescript.wrapInComment",
+        "title": "ForgeScript: Wrap in Comment"
       }
     ],
     "menus": {
@@ -325,6 +329,12 @@
         "command": "forgescript.search",
         "key": "ctrl+alt+s",
         "mac": "cmd+alt+s"
+      },
+      {
+        "command": "forgescript.wrapInComment",
+        "key": "ctrl+shift+/",
+        "mac": "cmd+shift+/",
+        "when": "editorTextFocus"
       }
     ]
   },

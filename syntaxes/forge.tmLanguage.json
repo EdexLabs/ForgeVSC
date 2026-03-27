@@ -3,14 +3,30 @@
   "name": "Forge",
   "scopeName": "source.forge",
   "patterns": [
-    { "include": "#comment" },
-    { "include": "#djseval-call" },
-    { "include": "#function-call" },
-    { "include": "#string-double" },
-    { "include": "#string-single" },
-    { "include": "#number" },
-    { "include": "#operator" },
-    { "include": "#punctuation" }
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#djseval-call"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "include": "#string-double"
+    },
+    {
+      "include": "#string-single"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#operator"
+    },
+    {
+      "include": "#punctuation"
+    }
   ],
   "repository": {
     "comment": {
@@ -23,30 +39,78 @@
           "name": "comment.block.forge",
           "begin": "/\\*",
           "end": "\\*/"
+        },
+        {
+          "name": "comment.block.c-function.forge",
+          "begin": "(\\$)(c|C)(?=\\[)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.comment.forge"
+            },
+            "2": {
+              "name": "punctuation.definition.comment.forge"
+            }
+          },
+          "end": "(?<=\\])",
+          "patterns": [
+            {
+              "include": "#c-function-comment-nested"
+            }
+          ]
         }
       ]
     },
-
+    "c-function-comment-nested": {
+      "name": "comment.block.c-function.forge",
+      "begin": "\\[",
+      "end": "\\]",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.begin.forge"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.end.forge"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#c-function-comment-nested"
+        }
+      ]
+    },
     "djseval-call": {
       "comment": "$djsEval[<js>] — content is embedded JavaScript",
       "name": "meta.function-call.djseval.forge",
-      "begin": "([!@#?&]*)(\\$)(djsEval)(\\[)",
+      "begin": "([!@#?&]*)(\\$)(djsEval|js)(\\[)",
       "beginCaptures": {
-        "1": { "name": "keyword.operator.modifier.forge" },
-        "2": { "name": "keyword.operator.dollar.forge" },
-        "3": { "name": "entity.name.function.forge" },
-        "4": { "name": "punctuation.definition.arguments.begin.forge" }
+        "1": {
+          "name": "keyword.operator.modifier.forge"
+        },
+        "2": {
+          "name": "keyword.operator.dollar.forge"
+        },
+        "3": {
+          "name": "entity.name.function.forge"
+        },
+        "4": {
+          "name": "punctuation.definition.arguments.begin.forge"
+        }
       },
       "end": "\\]",
       "endCaptures": {
-        "0": { "name": "punctuation.definition.arguments.end.forge" }
+        "0": {
+          "name": "punctuation.definition.arguments.end.forge"
+        }
       },
       "contentName": "source.js",
       "patterns": [
-        { "include": "source.js" }
+        {
+          "include": "source.js"
+        }
       ]
     },
-
     "function-call": {
       "patterns": [
         {
@@ -54,13 +118,21 @@
           "name": "meta.function-call.forge",
           "begin": "([!@#?&]*)(\\$)([a-zA-Z_][a-zA-Z0-9_]*)(?=\\[)",
           "beginCaptures": {
-            "1": { "name": "keyword.operator.modifier.forge" },
-            "2": { "name": "keyword.operator.dollar.forge" },
-            "3": { "name": "entity.name.function.forge" }
+            "1": {
+              "name": "keyword.operator.modifier.forge"
+            },
+            "2": {
+              "name": "keyword.operator.dollar.forge"
+            },
+            "3": {
+              "name": "entity.name.function.forge"
+            }
           },
           "end": "(?<=\\])",
           "patterns": [
-            { "include": "#function-args" }
+            {
+              "include": "#function-args"
+            }
           ]
         },
         {
@@ -68,40 +140,67 @@
           "name": "meta.function-call.simple.forge",
           "match": "([!@#?&]*)(\\$)([a-zA-Z_][a-zA-Z0-9_]*)",
           "captures": {
-            "1": { "name": "keyword.operator.modifier.forge" },
-            "2": { "name": "keyword.operator.dollar.forge" },
-            "3": { "name": "entity.name.function.forge" }
+            "1": {
+              "name": "keyword.operator.modifier.forge"
+            },
+            "2": {
+              "name": "keyword.operator.dollar.forge"
+            },
+            "3": {
+              "name": "entity.name.function.forge"
+            }
           }
         }
       ]
     },
-
     "function-args": {
       "name": "meta.function-call.arguments.forge",
       "begin": "\\[",
       "end": "\\]",
-      "beginCaptures": { "0": { "name": "punctuation.definition.arguments.begin.forge" } },
-      "endCaptures": { "0": { "name": "punctuation.definition.arguments.end.forge" } },
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.arguments.begin.forge"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.arguments.end.forge"
+        }
+      },
       "patterns": [
-        { "include": "#comment" },
-        { "include": "#djseval-call" },
-        { "include": "#function-call" },
-        { "include": "#string-double" },
-        { "include": "#string-single" },
-        { "include": "#number" },
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#djseval-call"
+        },
+        {
+          "include": "#function-call"
+        },
+        {
+          "include": "#string-double"
+        },
+        {
+          "include": "#string-single"
+        },
+        {
+          "include": "#number"
+        },
         {
           "name": "punctuation.separator.argument.forge",
           "match": ";"
         }
       ]
     },
-
     "string-double": {
       "name": "string.quoted.double.forge",
       "begin": "\"",
       "end": "\"",
       "patterns": [
-        { "name": "constant.character.escape.forge", "match": "\\\\." }
+        {
+          "name": "constant.character.escape.forge",
+          "match": "\\\\."
+        }
       ]
     },
     "string-single": {
@@ -109,7 +208,10 @@
       "begin": "'",
       "end": "'",
       "patterns": [
-        { "name": "constant.character.escape.forge", "match": "\\\\." }
+        {
+          "name": "constant.character.escape.forge",
+          "match": "\\\\."
+        }
       ]
     },
     "number": {
@@ -122,9 +224,18 @@
     },
     "punctuation": {
       "patterns": [
-        { "name": "punctuation.definition.bracket.begin.forge", "match": "\\[" },
-        { "name": "punctuation.definition.bracket.end.forge",   "match": "\\]" },
-        { "name": "punctuation.separator.forge",               "match": ";"  }
+        {
+          "name": "punctuation.definition.bracket.begin.forge",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.definition.bracket.end.forge",
+          "match": "\\]"
+        },
+        {
+          "name": "punctuation.separator.forge",
+          "match": ";"
+        }
       ]
     }
   }
