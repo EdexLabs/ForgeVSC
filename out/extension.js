@@ -143,6 +143,19 @@ async function activate(context) {
                 if (selection.end.character === 0 && endLine > startLine) {
                     endLine--;
                 }
+                const startLineText = editor.document.lineAt(startLine).text;
+                const endLineText = editor.document.lineAt(endLine).text;
+                if (startLineText.trim() === '$c[' && endLineText.trim() === ']') {
+                    const replacedLines = [];
+                    for (let i = startLine + 1; i < endLine; i++) {
+                        const lineText = editor.document.lineAt(i).text;
+                        replacedLines.push(lineText.startsWith('  ') ? lineText.substring(2) : lineText);
+                    }
+                    const newText = replacedLines.join('\n');
+                    const rangeToReplace = new vscode.Range(startLine, 0, endLine, endLineText.length);
+                    editBuilder.replace(rangeToReplace, newText);
+                    continue;
+                }
                 let minIndentStr = null;
                 for (let i = startLine; i <= endLine; i++) {
                     const line = editor.document.lineAt(i);
