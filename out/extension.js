@@ -135,7 +135,9 @@ async function activate(context) {
         const editor = vscode.window.activeTextEditor;
         if (!editor)
             return;
-        const selections = editor.selections;
+        const selections = [...editor.selections];
+        const postEditInfo = [];
+        let lineOffset = 0;
         await editor.edit(editBuilder => {
             for (const selection of selections) {
                 const startLine = selection.start.line;
@@ -145,6 +147,7 @@ async function activate(context) {
                 }
                 const startLineText = editor.document.lineAt(startLine).text;
                 const endLineText = editor.document.lineAt(endLine).text;
+                // ── Unwrap path ──────────────────────────────────────────────────────
                 if (startLineText.trim() === '$c[' && endLineText.trim() === ']') {
                     const replacedLines = [];
                     for (let i = startLine + 1; i < endLine; i++) {
@@ -154,8 +157,14 @@ async function activate(context) {
                     const newText = replacedLines.join('\n');
                     const rangeToReplace = new vscode.Range(startLine, 0, endLine, endLineText.length);
                     editBuilder.replace(rangeToReplace, newText);
+                    // Unwrap removes 2 lines ($c[ and ])
+                    const newStart = startLine + lineOffset;
+                    const newEnd = newStart + Math.max(0, replacedLines.length - 1);
+                    postEditInfo.push({ newStartLine: newStart, newEndLine: newEnd });
+                    lineOffset -= 2;
                     continue;
                 }
+                // ── Wrap path ────────────────────────────────────────────────────────
                 let minIndentStr = null;
                 for (let i = startLine; i <= endLine; i++) {
                     const line = editor.document.lineAt(i);
@@ -175,8 +184,20 @@ async function activate(context) {
                 const newText = `${baseIndent}$c[\n${replacedLines.join('\n')}\n${baseIndent}]`;
                 const rangeToReplace = new vscode.Range(startLine, 0, endLine, editor.document.lineAt(endLine).text.length);
                 editBuilder.replace(rangeToReplace, newText);
+                const newStart = startLine + lineOffset;
+                const newEnd = endLine + lineOffset + 2;
+                postEditInfo.push({ newStartLine: newStart, newEndLine: newEnd });
+                lineOffset += 2;
             }
         });
+        // Expand selections to cover each (now fully-commented) block
+        if (postEditInfo.length > 0) {
+            editor.selections = postEditInfo.map(({ newStartLine, newEndLine }) => {
+                const clampedEnd = Math.min(newEndLine, editor.document.lineCount - 1);
+                const endChar = editor.document.lineAt(clampedEnd).text.length;
+                return new vscode.Selection(new vscode.Position(newStartLine, 0), new vscode.Position(clampedEnd, endChar));
+            });
+        }
     }));
     context.subscriptions.push(vscode.commands.registerCommand('forgescript.start', async () => {
         if ((0, lspClient_1.isRunning)()) {

@@ -149,7 +149,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
 
-      const selections = editor.selections;
+      const selections = [...editor.selections];
+      interface ResultInfo {
+        newStartLine: number;
+        newEndLine: number;
+      }
+      const postEditInfo: ResultInfo[] = [];
+      let lineOffset = 0;
+
       await editor.edit(editBuilder => {
         for (const selection of selections) {
           const startLine = selection.start.line;
@@ -162,23 +169,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           const startLineText = editor.document.lineAt(startLine).text;
           const endLineText = editor.document.lineAt(endLine).text;
 
+          // ── Unwrap path ──────────────────────────────────────────────────────
           if (startLineText.trim() === '$c[' && endLineText.trim() === ']') {
-            const replacedLines = [];
+            const replacedLines: string[] = [];
             for (let i = startLine + 1; i < endLine; i++) {
               const lineText = editor.document.lineAt(i).text;
               replacedLines.push(lineText.startsWith('  ') ? lineText.substring(2) : lineText);
             }
 
             const newText = replacedLines.join('\n');
-            const rangeToReplace = new vscode.Range(
-              startLine, 0,
-              endLine, endLineText.length
-            );
-
+            const rangeToReplace = new vscode.Range(startLine, 0, endLine, endLineText.length);
             editBuilder.replace(rangeToReplace, newText);
+
+            // Unwrap removes 2 lines ($c[ and ])
+            const newStart = startLine + lineOffset;
+            const newEnd = newStart + Math.max(0, replacedLines.length - 1);
+            postEditInfo.push({ newStartLine: newStart, newEndLine: newEnd });
+            lineOffset -= 2;
             continue;
           }
 
+          // ── Wrap path ────────────────────────────────────────────────────────
           let minIndentStr: string | null = null;
           for (let i = startLine; i <= endLine; i++) {
             const line = editor.document.lineAt(i);
@@ -191,7 +202,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
 
           const baseIndent = minIndentStr || '';
-          const replacedLines = [];
+          const replacedLines: string[] = [];
           for (let i = startLine; i <= endLine; i++) {
             const lineText = editor.document.lineAt(i).text;
             replacedLines.push(lineText.length > 0 ? `  ${lineText}` : lineText);
@@ -202,12 +213,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             startLine, 0,
             endLine, editor.document.lineAt(endLine).text.length
           );
-
           editBuilder.replace(rangeToReplace, newText);
+
+          const newStart = startLine + lineOffset;
+          const newEnd = endLine + lineOffset + 2;
+          postEditInfo.push({ newStartLine: newStart, newEndLine: newEnd });
+          lineOffset += 2;
         }
       });
+
+      // Expand selections to cover each (now fully-commented) block
+      if (postEditInfo.length > 0) {
+        editor.selections = postEditInfo.map(({ newStartLine, newEndLine }) => {
+          const clampedEnd = Math.min(newEndLine, editor.document.lineCount - 1);
+          const endChar = editor.document.lineAt(clampedEnd).text.length;
+          return new vscode.Selection(
+            new vscode.Position(newStartLine, 0),
+            new vscode.Position(clampedEnd, endChar)
+          );
+        });
+      }
     })
-  );
+  )
 
   context.subscriptions.push(
     vscode.commands.registerCommand('forgescript.start', async () => {
