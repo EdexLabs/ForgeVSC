@@ -2,7 +2,7 @@
   "name": "forgescript",
   "displayName": "ForgeScript",
   "description": "Language support for Forgescript via ForgeLSP",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "publisher": "EdexLabs",
   "icon": "icon.png",
   "license": "GPL-3.0",
