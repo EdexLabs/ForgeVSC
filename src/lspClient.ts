@@ -86,7 +86,7 @@ export function createClient(
         if (!shouldRunLsp(document, position)) return undefined;
         return next(document, position, token);
       },
-    } as any // Use any temporarily to avoid complex type imports while ensuring functionality
+    } as any
   };
 
   return new LanguageClient(
@@ -100,7 +100,6 @@ export function createClient(
 /**
  * Returns true if we should perform LSP actions at the given position.
  * For JS/TS documents, this means being inside unescaped backticks.
- * For .forge documents, this is always true.
  */
 function shouldRunLsp(document: vscode.TextDocument, position: vscode.Position): boolean {
   if (document.languageId === 'forge') {

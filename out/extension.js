@@ -385,6 +385,62 @@ async function activate(context) {
     // ── Guides sidebar ───────────────────────────────────────────────────────
     (0, guides_1.initGuides)(context);
     (0, docsView_1.registerDocsView)(context, outputChannel);
+    // ── Inline Bracket Suggestions ──────────────────────────────────────────
+    context.subscriptions.push(vscode.languages.registerInlineCompletionItemProvider([
+        { scheme: 'file', language: 'javascript' },
+        { scheme: 'file', language: 'typescript' },
+        { scheme: 'file', language: 'javascriptreact' },
+        { scheme: 'file', language: 'typescriptreact' },
+        { scheme: 'file', language: 'forge' },
+    ], {
+        async provideInlineCompletionItems(document, position, _context, _token) {
+            const client = (0, lspClient_1.getClient)();
+            if (!client || !(0, lspClient_1.isRunning)())
+                return undefined;
+            // Standard check from lspClient
+            const text = document.getText();
+            const offset = document.offsetAt(position);
+            let inside = document.languageId === 'forge';
+            if (!inside) {
+                let escaped = false;
+                for (let i = 0; i < offset; i++) {
+                    if (escaped) {
+                        escaped = false;
+                        continue;
+                    }
+                    if (text[i] === '\\') {
+                        escaped = true;
+                    }
+                    else if (text[i] === '`') {
+                        inside = !inside;
+                    }
+                }
+            }
+            if (!inside)
+                return undefined;
+            try {
+                const result = await client.sendRequest('workspace/executeCommand', {
+                    command: 'forge.getInlineCompletions',
+                    arguments: [
+                        document.uri.toString(),
+                        position.line,
+                        position.character,
+                    ],
+                });
+                if (!result || result.length === 0)
+                    return undefined;
+                return result.map(text => {
+                    const item = new vscode.InlineCompletionItem(text);
+                    item.range = new vscode.Range(position, position);
+                    return item;
+                });
+            }
+            catch (err) {
+                outputChannel.appendLine(`[ForgeLSP] InlineCompletion error: ${err}`);
+                return undefined;
+            }
+        },
+    }));
     // ── Initial start ─────────────────────────────────────────────────────────
     await doStart();
     // ── Background update check (after 10 s to not slow startup) ─────────────

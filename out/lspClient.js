@@ -111,14 +111,13 @@ function createClient(binaryPath, initOptions, outputChannel, storageDir) {
                     return undefined;
                 return next(document, position, token);
             },
-        } // Use any temporarily to avoid complex type imports while ensuring functionality
+        }
     };
     return new node_1.LanguageClient('forgelsp', 'ForgeLSP', serverOptions, clientOptions);
 }
 /**
  * Returns true if we should perform LSP actions at the given position.
  * For JS/TS documents, this means being inside unescaped backticks.
- * For .forge documents, this is always true.
  */
 function shouldRunLsp(document, position) {
     if (document.languageId === 'forge') {
