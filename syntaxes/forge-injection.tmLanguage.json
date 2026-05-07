@@ -32,14 +32,14 @@
       },
       "patterns": [
         {
-          "include": "#djseval-in-template"
+          "include": "#js-in-template"
         }
       ]
     },
-    "djseval-in-template": {
-      "comment": "$djsEval[<js>] inside a backtick block — embed source.js so TextMate highlights the JS argument.",
-      "name": "meta.function-call.djseval.forge",
-      "begin": "([!@#?&]*)(\\$)(djsEval)(\\[)",
+    "js-in-template": {
+      "comment": "$djsEval[<js>] or $js[<js>] inside a backtick block — embed source.js so TextMate highlights the JS argument.",
+      "name": "meta.function-call.js-eval.forge",
+      "begin": "([!@#?&]*)(\\$)(djsEval|js)(\\[)",
       "beginCaptures": {
         "1": {
           "name": "keyword.operator.modifier.forge"
