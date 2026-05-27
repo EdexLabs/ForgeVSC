@@ -62,6 +62,7 @@
       "type": "array",
       "items": {
         "type": "string",
+        "format": "color-hex",
         "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
       },
       "description": "Custom hex color palette for function names (cycling or hashed)."
@@ -73,36 +74,43 @@
     },
     "custom_color_text": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for plain text and string content inside code blocks."
     },
     "custom_color_time": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for time literals (e.g. 10s, 5m, 2h)."
     },
     "custom_color_number": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for numeric literals."
     },
     "custom_color_separator": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for semicolon argument separators (;)."
     },
     "custom_color_dollar": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for the dollar sign ($) prefix."
     },
     "custom_color_modifier": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for operator/modifier characters (e.g. !, #, ?)."
     },
     "custom_color_boolean": {
       "type": "string",
+      "format": "color-hex",
       "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "description": "Custom hex color for boolean literals (true, false)."
     },
