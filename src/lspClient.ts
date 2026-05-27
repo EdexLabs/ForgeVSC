@@ -59,6 +59,38 @@ export function createClient(
     initializationOptions['constantCustomColors'] = initOptions.constantCustomColors;
   }
 
+  if (initOptions?.customColorText) {
+    initializationOptions['customColorText'] = initOptions.customColorText;
+  }
+
+  if (initOptions?.customColorTime) {
+    initializationOptions['customColorTime'] = initOptions.customColorTime;
+  }
+
+  if (initOptions?.customColorNumbers) {
+    initializationOptions['customColorNumbers'] = initOptions.customColorNumbers;
+  }
+
+  if (initOptions?.customColorSeparators) {
+    initializationOptions['customColorSeparators'] = initOptions.customColorSeparators;
+  }
+
+  if (initOptions?.customColorDollar) {
+    initializationOptions['customColorDollar'] = initOptions.customColorDollar;
+  }
+
+  if (initOptions?.customColorModifiers) {
+    initializationOptions['customColorModifiers'] = initOptions.customColorModifiers;
+  }
+
+  if (initOptions?.customColorBoolean) {
+    initializationOptions['customColorBoolean'] = initOptions.customColorBoolean;
+  }
+
+  if (initOptions?.semanticDecorations !== undefined) {
+    initializationOptions['semanticDecorations'] = initOptions.semanticDecorations;
+  }
+
   // Expose cache path inside extension storage so it survives restarts
   initializationOptions['cachePath'] = path.join(storageDir, 'metadata.json');
 

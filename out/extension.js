@@ -455,14 +455,24 @@ function clearAllDecorations() {
 }
 function applyDecorations(editor) {
     const uri = editor.document.uri.toString();
-    const tokens = tokensByUri.get(uri);
-    if (!tokens)
+    const data = tokensByUri.get(uri);
+    if (!data)
         return;
     const configPath = (0, configReader_1.findForgeConfig)();
     if (!configPath)
         return;
     const config = (0, configReader_1.readForgeConfig)(configPath, outputChannel);
-    if (!config || !config.customColors || config.customColors.length === 0) {
+    if (!config)
+        return;
+    const hasColors = (config.customColors && config.customColors.length > 0) ||
+        config.customColorText ||
+        config.customColorTime ||
+        config.customColorNumbers ||
+        config.customColorSeparators ||
+        config.customColorDollar ||
+        config.customColorModifiers ||
+        config.customColorBoolean;
+    if (!hasColors) {
         // Clear existing decorations if custom colors are disabled or missing
         const existing = decorationsByUri.get(uri);
         if (existing) {
@@ -471,33 +481,59 @@ function applyDecorations(editor) {
         }
         return;
     }
-    const colors = config.customColors;
     // Clear existing decorations for this URI before applying new ones
     const existing = decorationsByUri.get(uri);
     if (existing) {
         existing.forEach(d => d.dispose());
     }
-    const newDecorations = colors.map(c => vscode.window.createTextEditorDecorationType({
-        color: c
-    }));
-    const rangesByColorIndex = new Map();
-    for (const token of tokens) {
-        if (!rangesByColorIndex.has(token.color_index)) {
-            rangesByColorIndex.set(token.color_index, []);
-        }
-        const range = new vscode.Range(token.range.start.line, token.range.start.character, token.range.end.line, token.range.end.character);
-        rangesByColorIndex.get(token.color_index).push(range);
+    const newDecorations = [];
+    // Helper function to apply simple single-color tokens
+    function applySimpleTokens(tokens, colorHex) {
+        if (!colorHex || !tokens || tokens.length === 0)
+            return;
+        const dec = vscode.window.createTextEditorDecorationType({ color: colorHex });
+        newDecorations.push(dec);
+        const ranges = tokens.map(t => new vscode.Range(t.range.start.line, t.range.start.character, t.range.end.line, t.range.end.character));
+        editor.setDecorations(dec, ranges);
     }
-    for (const [index, ranges] of rangesByColorIndex) {
-        if (index < newDecorations.length) {
-            editor.setDecorations(newDecorations[index], ranges);
+    // 1. Function name tokens (existing logic, color palette)
+    if (config.customColors && config.customColors.length > 0 && data.tokens && data.tokens.length > 0) {
+        const colors = config.customColors;
+        const funcDecorations = colors.map(c => vscode.window.createTextEditorDecorationType({ color: c }));
+        newDecorations.push(...funcDecorations);
+        const rangesByColorIndex = new Map();
+        for (const token of data.tokens) {
+            if (!rangesByColorIndex.has(token.color_index)) {
+                rangesByColorIndex.set(token.color_index, []);
+            }
+            const range = new vscode.Range(token.range.start.line, token.range.start.character, token.range.end.line, token.range.end.character);
+            rangesByColorIndex.get(token.color_index).push(range);
+        }
+        for (const [index, ranges] of rangesByColorIndex) {
+            if (index < funcDecorations.length) {
+                editor.setDecorations(funcDecorations[index], ranges);
+            }
         }
     }
+    // 2. String/Text tokens
+    applySimpleTokens(data.text_tokens, config.customColorText);
+    // 3. Time tokens
+    applySimpleTokens(data.time_tokens, config.customColorTime);
+    // 4. Number tokens
+    applySimpleTokens(data.number_tokens, config.customColorNumbers);
+    // 5. Separator tokens
+    applySimpleTokens(data.separator_tokens, config.customColorSeparators);
+    // 6. Dollar tokens
+    applySimpleTokens(data.dollar_tokens, config.customColorDollar);
+    // 7. Modifier tokens
+    applySimpleTokens(data.modifier_tokens, config.customColorModifiers);
+    // 8. Boolean tokens
+    applySimpleTokens(data.boolean_tokens, config.customColorBoolean);
     decorationsByUri.set(uri, newDecorations);
 }
 function registerNotificationListeners(client) {
     client.onNotification('forge/customColors', (params) => {
-        tokensByUri.set(params.uri, params.tokens);
+        tokensByUri.set(params.uri, params);
         const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === params.uri);
         if (editor) {
             applyDecorations(editor);

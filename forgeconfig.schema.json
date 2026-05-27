@@ -5,7 +5,7 @@
   "properties": {
     "extensions": {
       "type": "array",
-      "description": "GitHub extension shorthands (e.g. 'github:user/repo#branch') or detailed metadata energy objects.",
+      "description": "GitHub extension shorthands (e.g. 'github:user/repo#branch') or detailed metadata objects.",
       "items": {
         "oneOf": [
           {
@@ -15,7 +15,9 @@
           },
           {
             "type": "object",
-            "required": ["extension"],
+            "required": [
+              "extension"
+            ],
             "properties": {
               "extension": {
                 "type": "string",
@@ -62,12 +64,52 @@
         "type": "string",
         "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
       },
-      "description": "Custom hex colors for functions."
+      "description": "Custom hex color palette for function names (cycling or hashed)."
     },
     "constant_custom_colors": {
       "type": "boolean",
       "default": false,
-      "description": "If enabled, custom colors will be assigned consistently based on function name rather than a rotating pattern."
+      "description": "If enabled, custom colors are assigned consistently based on function name rather than a rotating pattern."
+    },
+    "custom_color_text": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for plain text and string content inside code blocks."
+    },
+    "custom_color_time": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for time literals (e.g. 10s, 5m, 2h)."
+    },
+    "custom_color_number": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for numeric literals."
+    },
+    "custom_color_separator": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for semicolon argument separators (;)."
+    },
+    "custom_color_dollar": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for the dollar sign ($) prefix."
+    },
+    "custom_color_modifier": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for operator/modifier characters (e.g. !, #, ?)."
+    },
+    "custom_color_boolean": {
+      "type": "string",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "description": "Custom hex color for boolean literals (true, false)."
+    },
+    "semantic_decorations": {
+      "type": "boolean",
+      "default": false,
+      "description": "If enabled, both theme-driven semantic tokens and custom text decorations will be active simultaneously."
     }
   }
 }

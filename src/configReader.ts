@@ -17,8 +17,20 @@ interface ForgeConfigJson {
   extensions?: ExtensionEntry[];
   custom_functions_path?: string | string[];
   custom_functions_json?: string;
+  // Function cycling colors
   custom_colors?: string[];
   constant_custom_colors?: boolean;
+  // Per-token-type colors (single key per type, snake_case)
+  custom_color_text?: string;       // string/text (was also custom_color_string)
+  custom_color_time?: string;
+  custom_color_number?: string;     // numbers
+  custom_color_modifier?: string;   // operators/modifiers
+  custom_color_operator?: string;   // alias for modifier
+  custom_color_separator?: string;  // argument separators
+  custom_color_dollar?: string;
+  custom_color_boolean?: string;
+  // Dual-decoration mode
+  semantic_decorations?: boolean;
 }
 
 // ─── LSP initialization options (matches the Rust ForgeConfig struct) ─────
@@ -35,8 +47,19 @@ export interface LspInitOptions {
   customFunctionsPath?: string | string[];
   customFunctionsJson?: string;
   cachePath?: string;
+  // Function cycling colors (existing)
   customColors?: string[];
   constantCustomColors?: boolean;
+  // Per-token-type colors (new, optional single hex strings)
+  customColorText?: string;
+  customColorTime?: string;
+  customColorNumbers?: string;
+  customColorSeparators?: string;
+  customColorDollar?: string;
+  customColorModifiers?: string;
+  customColorBoolean?: string;
+  // Dual-decoration mode
+  semanticDecorations?: boolean;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -55,8 +78,8 @@ function expandGithubShorthand(shorthand: string): MetadataUrlConfig {
   return {
     extension: `${user}/${repo}`,
     functions: `${base}/functions.json`,
-    enums:     `${base}/enums.json`,
-    events:    `${base}/events.json`,
+    enums: `${base}/enums.json`,
+    events: `${base}/events.json`,
   };
 }
 
@@ -121,8 +144,8 @@ export function readForgeConfig(
         } else if (typeof entry === 'object' && entry.extension) {
           const m: MetadataUrlConfig = { extension: entry.extension };
           if (entry.functions) m.functions = entry.functions;
-          if (entry.enums)     m.enums     = entry.enums;
-          if (entry.events)    m.events    = entry.events;
+          if (entry.enums) m.enums = entry.enums;
+          if (entry.events) m.events = entry.events;
           opts.metadataUrls.push(m);
         } else {
           outputChannel.appendLine(`[ForgeLSP] Skipping invalid extension entry: ${JSON.stringify(entry)}`);
@@ -155,6 +178,30 @@ export function readForgeConfig(
   // ── constant_custom_colors ─────────────────────────────────────────────
   if (typeof json.constant_custom_colors === 'boolean') {
     opts.constantCustomColors = json.constant_custom_colors;
+  }
+
+  // ── per-type colors ────────────────────────────────────────────────────
+  if (json.custom_color_text) { opts.customColorText = json.custom_color_text; }
+
+  if (json.custom_color_time) { opts.customColorTime = json.custom_color_time; }
+
+  const numVal = json.custom_color_number;
+  if (numVal) { opts.customColorNumbers = numVal; }
+
+  const sepVal = json.custom_color_separator;
+  if (sepVal) { opts.customColorSeparators = sepVal; }
+
+  if (json.custom_color_dollar) { opts.customColorDollar = json.custom_color_dollar; }
+
+  const modVal = json.custom_color_modifier ?? json.custom_color_operator;
+  if (modVal) { opts.customColorModifiers = modVal; }
+
+  const boolVal = json.custom_color_boolean;
+  if (boolVal) { opts.customColorBoolean = boolVal; }
+
+  // ── semantic_decorations ───────────────────────────────────────────────
+  if (typeof json.semantic_decorations === 'boolean') {
+    opts.semanticDecorations = json.semantic_decorations;
   }
 
   outputChannel.appendLine(

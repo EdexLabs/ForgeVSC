@@ -32,23 +32,23 @@
     "comment": {
       "patterns": [
         {
-          "name": "comment.line.double-slash.forge",
+          "name": "meta.comment.line.forge",
           "match": "//.*$"
         },
         {
-          "name": "comment.block.forge",
+          "name": "meta.comment.block.forge",
           "begin": "/\\*",
           "end": "\\*/"
         },
         {
-          "name": "comment.block.c-function.forge",
+          "name": "meta.comment.c-function.forge",
           "begin": "(\\$)(c|C)(?=\\[)",
           "beginCaptures": {
             "1": {
-              "name": "punctuation.definition.comment.forge"
+              "name": "meta.punctuation.comment.forge"
             },
             "2": {
-              "name": "punctuation.definition.comment.forge"
+              "name": "meta.punctuation.comment.forge"
             }
           },
           "end": "(?<=\\])",
@@ -61,17 +61,17 @@
       ]
     },
     "c-function-comment-nested": {
-      "name": "comment.block.c-function.forge",
+      "name": "meta.comment.c-function.forge",
       "begin": "\\[",
       "end": "\\]",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.comment.begin.forge"
+          "name": "meta.punctuation.comment.begin.forge"
         }
       },
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.comment.end.forge"
+          "name": "meta.punctuation.comment.end.forge"
         }
       },
       "patterns": [
@@ -86,22 +86,22 @@
       "begin": "([!@#?&]*)(\\$)(djsEval|js)(\\[)",
       "beginCaptures": {
         "1": {
-          "name": "keyword.operator.modifier.forge"
+          "name": "meta.operator.modifier.forge"
         },
         "2": {
-          "name": "keyword.operator.dollar.forge"
+          "name": "meta.operator.dollar.forge"
         },
         "3": {
-          "name": "entity.name.function.forge"
+          "name": "meta.entity.function.forge"
         },
         "4": {
-          "name": "punctuation.definition.arguments.begin.forge"
+          "name": "meta.punctuation.arguments.begin.forge"
         }
       },
       "end": "\\]",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.arguments.end.forge"
+          "name": "meta.punctuation.arguments.end.forge"
         }
       },
       "contentName": "source.js",
@@ -119,13 +119,13 @@
           "begin": "([!@#?&]*)(\\$)([a-zA-Z_][a-zA-Z0-9_]*)(?=\\[)",
           "beginCaptures": {
             "1": {
-              "name": "keyword.operator.modifier.forge"
+              "name": "meta.operator.modifier.forge"
             },
             "2": {
-              "name": "keyword.operator.dollar.forge"
+              "name": "meta.operator.dollar.forge"
             },
             "3": {
-              "name": "entity.name.function.forge"
+              "name": "meta.entity.function.forge"
             }
           },
           "end": "(?<=\\])",
@@ -141,13 +141,13 @@
           "match": "([!@#?&]*)(\\$)([a-zA-Z_][a-zA-Z0-9_]*)",
           "captures": {
             "1": {
-              "name": "keyword.operator.modifier.forge"
+              "name": "meta.operator.modifier.forge"
             },
             "2": {
-              "name": "keyword.operator.dollar.forge"
+              "name": "meta.operator.dollar.forge"
             },
             "3": {
-              "name": "entity.name.function.forge"
+              "name": "meta.entity.function.forge"
             }
           }
         }
@@ -159,12 +159,12 @@
       "end": "\\]",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.arguments.begin.forge"
+          "name": "meta.punctuation.arguments.begin.forge"
         }
       },
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.arguments.end.forge"
+          "name": "meta.punctuation.arguments.end.forge"
         }
       },
       "patterns": [
@@ -187,53 +187,53 @@
           "include": "#number"
         },
         {
-          "name": "punctuation.separator.argument.forge",
+          "name": "meta.punctuation.separator.forge",
           "match": ";"
         }
       ]
     },
     "string-double": {
-      "name": "string.quoted.double.forge",
+      "name": "meta.string.quoted.double.forge",
       "begin": "\"",
       "end": "\"",
       "patterns": [
         {
-          "name": "constant.character.escape.forge",
+          "name": "meta.constant.escape.forge",
           "match": "\\\\."
         }
       ]
     },
     "string-single": {
-      "name": "string.quoted.single.forge",
+      "name": "meta.string.quoted.single.forge",
       "begin": "'",
       "end": "'",
       "patterns": [
         {
-          "name": "constant.character.escape.forge",
+          "name": "meta.constant.escape.forge",
           "match": "\\\\."
         }
       ]
     },
     "number": {
-      "name": "constant.numeric.forge",
+      "name": "meta.constant.numeric.forge",
       "match": "\\b\\d+(\\.\\d+)?\\b"
     },
     "operator": {
-      "name": "keyword.operator.forge",
+      "name": "meta.operator.forge",
       "match": "[!@#?&=<>+\\-*/%]"
     },
     "punctuation": {
       "patterns": [
         {
-          "name": "punctuation.definition.bracket.begin.forge",
+          "name": "meta.punctuation.bracket.begin.forge",
           "match": "\\["
         },
         {
-          "name": "punctuation.definition.bracket.end.forge",
+          "name": "meta.punctuation.bracket.end.forge",
           "match": "\\]"
         },
         {
-          "name": "punctuation.separator.forge",
+          "name": "meta.punctuation.separator.forge",
           "match": ";"
         }
       ]

@@ -2,7 +2,7 @@
   "name": "forgescript",
   "displayName": "ForgeScript",
   "description": "Language support for Forgescript via ForgeLSP",
-  "version": "2.0.14",
+  "version": "2.0.15",
   "publisher": "EdexLabs",
   "icon": "icon.png",
   "license": "GPL-3.0",
@@ -29,6 +29,12 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": "forgeconfig.json",
+        "url": "./forgeconfig.schema.json"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {

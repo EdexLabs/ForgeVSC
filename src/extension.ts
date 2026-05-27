@@ -34,8 +34,28 @@ import {
 let outputChannel: vscode.OutputChannel;
 let storageDir: string;
 let statusBarItem: vscode.StatusBarItem;
+interface SimpleColorToken {
+  range: vscode.Range;
+}
+
+interface CustomColorToken {
+  range: vscode.Range;
+  color_index: number;
+}
+
+interface CustomColorData {
+  tokens: CustomColorToken[];
+  text_tokens: SimpleColorToken[];
+  time_tokens: SimpleColorToken[];
+  number_tokens: SimpleColorToken[];
+  dollar_tokens: SimpleColorToken[];
+  modifier_tokens: SimpleColorToken[];
+  boolean_tokens: SimpleColorToken[];
+  separator_tokens: SimpleColorToken[];
+}
+
 const decorationsByUri = new Map<string, vscode.TextEditorDecorationType[]>();
-const tokensByUri = new Map<string, { range: vscode.Range; color_index: number }[]>();
+const tokensByUri = new Map<string, CustomColorData>();
 
 // ─── Status bar ────────────────────────────────────────────────────────────
 
@@ -567,14 +587,25 @@ function clearAllDecorations(): void {
 
 function applyDecorations(editor: vscode.TextEditor): void {
   const uri = editor.document.uri.toString();
-  const tokens = tokensByUri.get(uri);
-  if (!tokens) return;
+  const data = tokensByUri.get(uri);
+  if (!data) return;
 
   const configPath = findForgeConfig();
   if (!configPath) return;
 
   const config = readForgeConfig(configPath, outputChannel);
-  if (!config || !config.customColors || config.customColors.length === 0) {
+  if (!config) return;
+
+  const hasColors = (config.customColors && config.customColors.length > 0) ||
+    config.customColorText ||
+    config.customColorTime ||
+    config.customColorNumbers ||
+    config.customColorSeparators ||
+    config.customColorDollar ||
+    config.customColorModifiers ||
+    config.customColorBoolean;
+
+  if (!hasColors) {
     // Clear existing decorations if custom colors are disabled or missing
     const existing = decorationsByUri.get(uri);
     if (existing) {
@@ -584,44 +615,85 @@ function applyDecorations(editor: vscode.TextEditor): void {
     return;
   }
 
-  const colors = config.customColors;
-
   // Clear existing decorations for this URI before applying new ones
   const existing = decorationsByUri.get(uri);
   if (existing) {
     existing.forEach(d => d.dispose());
   }
 
-  const newDecorations: vscode.TextEditorDecorationType[] = colors.map(c => vscode.window.createTextEditorDecorationType({
-    color: c
-  }));
+  const newDecorations: vscode.TextEditorDecorationType[] = [];
 
-  const rangesByColorIndex = new Map<number, vscode.Range[]>();
-  for (const token of tokens) {
-    if (!rangesByColorIndex.has(token.color_index)) {
-      rangesByColorIndex.set(token.color_index, []);
-    }
-    const range = new vscode.Range(
-      token.range.start.line,
-      token.range.start.character,
-      token.range.end.line,
-      token.range.end.character
-    );
-    rangesByColorIndex.get(token.color_index)!.push(range);
+  // Helper function to apply simple single-color tokens
+  function applySimpleTokens(
+    tokens: SimpleColorToken[],
+    colorHex: string | undefined
+  ) {
+    if (!colorHex || !tokens || tokens.length === 0) return;
+    const dec = vscode.window.createTextEditorDecorationType({ color: colorHex });
+    newDecorations.push(dec);
+    const ranges = tokens.map(t => new vscode.Range(
+      t.range.start.line,
+      t.range.start.character,
+      t.range.end.line,
+      t.range.end.character
+    ));
+    editor.setDecorations(dec, ranges);
   }
 
-  for (const [index, ranges] of rangesByColorIndex) {
-    if (index < newDecorations.length) {
-      editor.setDecorations(newDecorations[index], ranges);
+  // 1. Function name tokens (existing logic, color palette)
+  if (config.customColors && config.customColors.length > 0 && data.tokens && data.tokens.length > 0) {
+    const colors = config.customColors;
+    const funcDecorations = colors.map(c => vscode.window.createTextEditorDecorationType({ color: c }));
+    newDecorations.push(...funcDecorations);
+
+    const rangesByColorIndex = new Map<number, vscode.Range[]>();
+    for (const token of data.tokens) {
+      if (!rangesByColorIndex.has(token.color_index)) {
+        rangesByColorIndex.set(token.color_index, []);
+      }
+      const range = new vscode.Range(
+        token.range.start.line,
+        token.range.start.character,
+        token.range.end.line,
+        token.range.end.character
+      );
+      rangesByColorIndex.get(token.color_index)!.push(range);
+    }
+
+    for (const [index, ranges] of rangesByColorIndex) {
+      if (index < funcDecorations.length) {
+        editor.setDecorations(funcDecorations[index], ranges);
+      }
     }
   }
+
+  // 2. String/Text tokens
+  applySimpleTokens(data.text_tokens, config.customColorText);
+
+  // 3. Time tokens
+  applySimpleTokens(data.time_tokens, config.customColorTime);
+
+  // 4. Number tokens
+  applySimpleTokens(data.number_tokens, config.customColorNumbers);
+
+  // 5. Separator tokens
+  applySimpleTokens(data.separator_tokens, config.customColorSeparators);
+
+  // 6. Dollar tokens
+  applySimpleTokens(data.dollar_tokens, config.customColorDollar);
+
+  // 7. Modifier tokens
+  applySimpleTokens(data.modifier_tokens, config.customColorModifiers);
+
+  // 8. Boolean tokens
+  applySimpleTokens(data.boolean_tokens, config.customColorBoolean);
 
   decorationsByUri.set(uri, newDecorations);
 }
 
 function registerNotificationListeners(client: any): void {
-  client.onNotification('forge/customColors', (params: { uri: string; tokens: { range: vscode.Range; color_index: number }[] }) => {
-    tokensByUri.set(params.uri, params.tokens);
+  client.onNotification('forge/customColors', (params: CustomColorData & { uri: string }) => {
+    tokensByUri.set(params.uri, params);
     const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === params.uri);
     if (editor) {
       applyDecorations(editor);

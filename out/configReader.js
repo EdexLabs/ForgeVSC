@@ -152,6 +152,36 @@ function readForgeConfig(configPath, outputChannel) {
     if (typeof json.constant_custom_colors === 'boolean') {
         opts.constantCustomColors = json.constant_custom_colors;
     }
+    // ── per-type colors ────────────────────────────────────────────────────
+    if (json.custom_color_text) {
+        opts.customColorText = json.custom_color_text;
+    }
+    if (json.custom_color_time) {
+        opts.customColorTime = json.custom_color_time;
+    }
+    const numVal = json.custom_color_number;
+    if (numVal) {
+        opts.customColorNumbers = numVal;
+    }
+    const sepVal = json.custom_color_separator;
+    if (sepVal) {
+        opts.customColorSeparators = sepVal;
+    }
+    if (json.custom_color_dollar) {
+        opts.customColorDollar = json.custom_color_dollar;
+    }
+    const modVal = json.custom_color_modifier ?? json.custom_color_operator;
+    if (modVal) {
+        opts.customColorModifiers = modVal;
+    }
+    const boolVal = json.custom_color_boolean;
+    if (boolVal) {
+        opts.customColorBoolean = boolVal;
+    }
+    // ── semantic_decorations ───────────────────────────────────────────────
+    if (typeof json.semantic_decorations === 'boolean') {
+        opts.semanticDecorations = json.semantic_decorations;
+    }
     outputChannel.appendLine(`[ForgeLSP] Loaded forgeconfig.json: ${opts.metadataUrls?.length ?? 0} extension(s)` +
         (opts.customFunctionsPath ? `, custom path: ${Array.isArray(opts.customFunctionsPath) ? opts.customFunctionsPath.join(', ') : opts.customFunctionsPath}` : '') +
         (opts.customFunctionsJson ? `, custom JSON: ${opts.customFunctionsJson}` : ''));
