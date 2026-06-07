@@ -6,6 +6,8 @@ import * as fs from 'fs';
 
 interface ExtensionObject {
   extension: string;
+  /** Source branch of the upstream repo, e.g. "dev" or "main" */
+  branch?: string;
   functions?: string;
   enums?: string;
   events?: string;
@@ -31,12 +33,19 @@ interface ForgeConfigJson {
   custom_color_boolean?: string;
   // Dual-decoration mode
   semantic_decorations?: boolean;
+  // ── Translation ──────────────────────────────────────────────────────────
+  /** Base URL of the ForgeTranslation server */
+  translation_server_url?: string;
+  /** ISO 639-1 language code for hover/completion descriptions (e.g. "de", "es", "tr") */
+  translation_language?: string;
 }
 
 // ─── LSP initialization options (matches the Rust ForgeConfig struct) ─────
 
 export interface MetadataUrlConfig {
   extension: string;
+  /** Source branch of the upstream repo — forwarded to the translation server */
+  branch?: string;
   functions?: string;
   enums?: string;
   events?: string;
@@ -60,6 +69,9 @@ export interface LspInitOptions {
   customColorBoolean?: string;
   // Dual-decoration mode
   semanticDecorations?: boolean;
+  // ── Translation ──────────────────────────────────────────────────────────
+  translationServerUrl?: string;
+  translationLanguage?: string;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -77,6 +89,7 @@ function expandGithubShorthand(shorthand: string): MetadataUrlConfig {
   const base = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/metadata`;
   return {
     extension: `${user}/${repo}`,
+    branch,
     functions: `${base}/functions.json`,
     enums: `${base}/enums.json`,
     events: `${base}/events.json`,
@@ -143,6 +156,7 @@ export function readForgeConfig(
           opts.metadataUrls.push(expandGithubShorthand(entry));
         } else if (typeof entry === 'object' && entry.extension) {
           const m: MetadataUrlConfig = { extension: entry.extension };
+          if (entry.branch) m.branch = entry.branch;
           if (entry.functions) m.functions = entry.functions;
           if (entry.enums) m.enums = entry.enums;
           if (entry.events) m.events = entry.events;
@@ -202,6 +216,14 @@ export function readForgeConfig(
   // ── semantic_decorations ───────────────────────────────────────────────
   if (typeof json.semantic_decorations === 'boolean') {
     opts.semanticDecorations = json.semantic_decorations;
+  }
+
+  // ── translation ────────────────────────────────────────────────────────
+  if (json.translation_server_url) {
+    opts.translationServerUrl = json.translation_server_url;
+  }
+  if (json.translation_language) {
+    opts.translationLanguage = json.translation_language;
   }
 
   outputChannel.appendLine(

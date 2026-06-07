@@ -53,6 +53,7 @@ function expandGithubShorthand(shorthand) {
     const base = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/metadata`;
     return {
         extension: `${user}/${repo}`,
+        branch,
         functions: `${base}/functions.json`,
         enums: `${base}/enums.json`,
         events: `${base}/events.json`,
@@ -114,6 +115,8 @@ function readForgeConfig(configPath, outputChannel) {
                 }
                 else if (typeof entry === 'object' && entry.extension) {
                     const m = { extension: entry.extension };
+                    if (entry.branch)
+                        m.branch = entry.branch;
                     if (entry.functions)
                         m.functions = entry.functions;
                     if (entry.enums)
@@ -181,6 +184,13 @@ function readForgeConfig(configPath, outputChannel) {
     // ── semantic_decorations ───────────────────────────────────────────────
     if (typeof json.semantic_decorations === 'boolean') {
         opts.semanticDecorations = json.semantic_decorations;
+    }
+    // ── translation ────────────────────────────────────────────────────────
+    if (json.translation_server_url) {
+        opts.translationServerUrl = json.translation_server_url;
+    }
+    if (json.translation_language) {
+        opts.translationLanguage = json.translation_language;
     }
     outputChannel.appendLine(`[ForgeLSP] Loaded forgeconfig.json: ${opts.metadataUrls?.length ?? 0} extension(s)` +
         (opts.customFunctionsPath ? `, custom path: ${Array.isArray(opts.customFunctionsPath) ? opts.customFunctionsPath.join(', ') : opts.customFunctionsPath}` : '') +

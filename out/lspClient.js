@@ -105,6 +105,12 @@ function createClient(binaryPath, initOptions, outputChannel, storageDir) {
     if (initOptions?.semanticDecorations !== undefined) {
         initializationOptions['semanticDecorations'] = initOptions.semanticDecorations;
     }
+    if (initOptions?.translationServerUrl) {
+        initializationOptions['translationServerUrl'] = initOptions.translationServerUrl;
+    }
+    if (initOptions?.translationLanguage) {
+        initializationOptions['translationLanguage'] = initOptions.translationLanguage;
+    }
     // Expose cache path inside extension storage so it survives restarts
     initializationOptions['cachePath'] = path.join(storageDir, 'metadata.json');
     const clientOptions = {

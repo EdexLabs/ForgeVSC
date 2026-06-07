@@ -47,6 +47,60 @@ const lspClient_1 = require("./lspClient");
 let outputChannel;
 let storageDir;
 let statusBarItem;
+const diagnosticSummaryByUri = new Map();
+// ─── Diagnostic tree view ──────────────────────────────────────────────────
+class DiagnosticsProvider {
+    constructor() {
+        this._onDidChangeTreeData = new vscode.EventEmitter();
+        this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+    }
+    refresh() {
+        this._onDidChangeTreeData.fire();
+    }
+    getTreeItem(element) {
+        return element;
+    }
+    getChildren(element) {
+        if (element)
+            return [];
+        const items = [];
+        for (const [uri, summary] of diagnosticSummaryByUri.entries()) {
+            const label = vscode.Uri.parse(uri).fsPath.split('/').pop() ?? uri;
+            const icon = summary.error_count > 0
+                ? new vscode.ThemeIcon('error', new vscode.ThemeColor('errorForeground'))
+                : summary.warning_count > 0
+                    ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground'))
+                    : new vscode.ThemeIcon('pass');
+            const desc = summary.error_count > 0
+                ? `${summary.error_count} error(s)`
+                : summary.warning_count > 0
+                    ? `${summary.warning_count} warning(s)`
+                    : 'No issues';
+            const item = new DiagnosticItem(label, desc, uri, icon);
+            items.push(item);
+        }
+        return items.sort((a, b) => {
+            const sa = diagnosticSummaryByUri.get(a.uri);
+            const sb = diagnosticSummaryByUri.get(b.uri);
+            return (sb.error_count - sa.error_count) || (sb.warning_count - sa.warning_count);
+        });
+    }
+}
+class DiagnosticItem extends vscode.TreeItem {
+    constructor(label, description, uri, icon) {
+        super(label, vscode.TreeItemCollapsibleState.None);
+        this.uri = uri;
+        this.description = description;
+        this.iconPath = icon;
+        this.command = {
+            command: 'vscode.open',
+            title: 'Open file',
+            arguments: [vscode.Uri.parse(uri)],
+        };
+        this.tooltip = uri;
+    }
+}
+let diagnosticsProvider;
 const decorationsByUri = new Map();
 const tokensByUri = new Map();
 // ─── Status bar ────────────────────────────────────────────────────────────
@@ -385,6 +439,41 @@ async function activate(context) {
     // ── Guides sidebar ───────────────────────────────────────────────────────
     (0, guides_1.initGuides)(context);
     (0, docsView_1.registerDocsView)(context, outputChannel);
+    // ── Diagnostics tree view ─────────────────────────────────────────────────
+    diagnosticsProvider = new DiagnosticsProvider();
+    const diagnosticsTreeView = vscode.window.createTreeView('forgescript.diagnostics', {
+        treeDataProvider: diagnosticsProvider,
+        showCollapseAll: false,
+    });
+    context.subscriptions.push(diagnosticsTreeView);
+    context.subscriptions.push(vscode.commands.registerCommand('forgescript.showDiagnostics', () => {
+        diagnosticsTreeView.reveal(undefined, { focus: true }).then(() => { }, () => {
+            vscode.commands.executeCommand('forgescript.diagnostics.focus');
+        });
+    }));
+    // ── forgeconfig.json hover: show extension function counts ───────────────
+    context.subscriptions.push(vscode.languages.registerHoverProvider({ language: 'json', pattern: '**/forgeconfig.json' }, {
+        provideHover(document, position) {
+            const wordRange = document.getWordRangeAtPosition(position, /github:[^\s"]+/);
+            if (!wordRange)
+                return;
+            const word = document.getText(wordRange);
+            // Parse the forgeconfig to find how many functions this extension adds.
+            const configPath = (0, configReader_1.findForgeConfig)();
+            if (!configPath)
+                return;
+            const config = (0, configReader_1.readForgeConfig)(configPath, outputChannel);
+            if (!config?.metadataUrls)
+                return;
+            const match = config.metadataUrls.find((m) => m.extension && word.includes(m.extension));
+            if (!match)
+                return;
+            const md = new vscode.MarkdownString(`**ForgeScript Extension**: \`${match.extension}\`\n\n` +
+                (match.functions ? `Functions URL: ${match.functions}` : '') +
+                '\n\nHover over the status bar badge to see function count after loading.');
+            return new vscode.Hover(md, wordRange);
+        },
+    }));
     // ── Inline Bracket Suggestions ──────────────────────────────────────────
     context.subscriptions.push(vscode.languages.registerInlineCompletionItemProvider([
         { scheme: 'file', language: 'javascript' },
@@ -538,6 +627,27 @@ function registerNotificationListeners(client) {
         if (editor) {
             applyDecorations(editor);
         }
+    });
+    client.onNotification('forge/diagnosticSummary', (params) => {
+        diagnosticSummaryByUri.set(params.uri, params);
+        // Aggregate totals across all open files
+        let totalErrors = 0;
+        let totalWarnings = 0;
+        for (const s of diagnosticSummaryByUri.values()) {
+            totalErrors += s.error_count;
+            totalWarnings += s.warning_count;
+        }
+        // Update status bar badge
+        const state = (0, binaryManager_1.loadState)(storageDir);
+        const tag = state.isCustom ? 'custom' : (state.installedReleaseId ?? 'unknown');
+        const badge = totalErrors > 0
+            ? `$(error) ${totalErrors}`
+            : totalWarnings > 0
+                ? `$(warning) ${totalWarnings}`
+                : '$(check)';
+        setStatus(`ForgeLSP (${tag}) ${badge}`, `ForgeLSP running · ${totalErrors} error(s), ${totalWarnings} warning(s)`, 'forgescript.showDiagnostics');
+        // Refresh the diagnostics tree
+        diagnosticsProvider.refresh();
     });
 }
 // ─── Extension deactivate ──────────────────────────────────────────────────
